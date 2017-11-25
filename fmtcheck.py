@@ -53,7 +53,6 @@ DEFAULT_CFG = ScanConfig(
     path_patterns=[
         '*.[ch]',  '*.[ch]pp', '*.[ch]xx',
         '*.txt', '*.cmake',
-        '[Mm]akefile',
         '*.sh', '*.bash', '*.bat',
         '*.xsd', '*.xml',
     ],
@@ -62,18 +61,6 @@ DEFAULT_CFG = ScanConfig(
     ],
     skip_data_patterns=[],
 )
-
-DEFAULT_CFG.path_patterns.extend([
-    'Jamfile',
-    'jamrules',
-    '.m',
-])
-DEFAULT_CFG.skip_path_patterns.extend([
-    'mexsrc',
-])
-DEFAULT_CFG.skip_data_patterns.extend([
-    '^// Copyright \(C\) [0-9\-]* Code Synthesis Tools CC',
-])
 
 
 class SrcTree(object):
