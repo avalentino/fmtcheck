@@ -4,7 +4,7 @@
 """Basic checks on source code
 
 Available checks include: presence of tabs, EOL consistency,
-presence of trailing speces, coformity to the ASCII encoding and
+presence of trailing spaces, conformity to the ASCII encoding and
 line length.
 
 Some basic tool for fixing formatting problems is also provided.
@@ -573,7 +573,7 @@ def get_check_parser(parser=None):
     parser.add_argument(
         '--no-encoding', action='store_false', dest='check_encoding',
         default=True, help='''disable checks on text encoding:
-        source conde that is not pure ASCII is considered not valid
+        source code that is not pure ASCII is considered not valid
         (default: False)''')
 
     parser.add_argument(
