@@ -377,19 +377,19 @@ class ConfigParser(configparser.ConfigParser):
         if scancfg.path_patterns:
             d['path_patterns'] = collections.OrderedDict(
                 ('pattern_{:02d}'.format(i), item)
-                for i, item in enumerate(scancfg.path_patterns)
+                for i, item in enumerate(scancfg.path_patterns, 1)
             )
 
         if scancfg.skip_path_patterns:
             d['skip_path_patterns'] = collections.OrderedDict(
                 ('pattern_{:02d}'.format(i), item)
-                for i, item in enumerate(scancfg.skip_path_patterns)
+                for i, item in enumerate(scancfg.skip_path_patterns, 1)
             )
 
         if scancfg.skip_data_patterns:
             d['skip_data_patterns'] = collections.OrderedDict(
                 ('pattern_{:02d}'.format(i), item)
-                for i, item in enumerate(scancfg.skip_data_patterns)
+                for i, item in enumerate(scancfg.skip_data_patterns, 1)
             )
 
         return d
