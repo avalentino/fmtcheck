@@ -589,7 +589,7 @@ def get_check_parser(parser=None):
         '-c', '--config', help='path to the configuration file')
 
     parser.add_argument(
-        'paths', default='.', nargs='*', metavar='PATH',
+        'paths', nargs='+', metavar='PATH',
         help='root of the source tree to scan (default: %(default)r)')
 
     return parser
@@ -636,7 +636,7 @@ def get_fix_parser(parser=None):
         '-c', '--config', help='path to the configuration file')
 
     parser.add_argument(
-        'paths', default='.', nargs='*', metavar='PATH',
+        'paths', nargs='+', metavar='PATH',
         help='root of the source tree to scan (default: %(default)r)')
 
     return parser
