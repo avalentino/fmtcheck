@@ -664,8 +664,9 @@ def get_parser():
     """Build and return the command line parser."""
 
     parser = argparse.ArgumentParser(
-        prog=PROG, description='''%(prog)s performs basic formatting
-        checks/fixes on source code.''')
+        prog=PROG, epilog='Copyright (C) 2017 Antonio Valentino',
+        description='''%(prog)s performs basic formatting checks/fixes
+        on source code.''')
 
     parser.add_argument(
         '--version', action='version',
