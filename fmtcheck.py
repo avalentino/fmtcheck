@@ -609,13 +609,11 @@ def get_fix_parser(parser=None):
     parser.add_argument(
         '-v', '--verbose',
         dest='loglevel', action='store_const', const=logging.INFO,
-        help='''enable verbose output: for each check failed print an
-        informative line (by default only global statistics are printed)''')
+        help='enable verbose output')
     parser.add_argument(
         '-d', '--debug',
         dest='loglevel', action='store_const', const=logging.DEBUG,
-        help='''enable debug output (by default only global statistics
-        are printed)''')
+        help='enable debug output')
 
     parser.add_argument(
         '--eol', default=Eol.NATIVE, choices=list(Eol.__members__.keys()),
@@ -657,8 +655,7 @@ def get_dumpcfg_parser(parser=None):
     parser.add_argument(
         '-d', '--debug',
         dest='loglevel', action='store_const', const=logging.DEBUG,
-        help='''enable debug output (by default only global statistics
-        are printed)''')
+        help='enable debug output')
 
     return parser
 
