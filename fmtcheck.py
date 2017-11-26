@@ -27,7 +27,7 @@ import collections
 import configparser
 
 
-__version__ = '1.0.0.dev0'
+__version__ = '1.0.1.dev0'
 
 
 PROG = 'fmtcheck'
@@ -519,7 +519,7 @@ class ConfigParser(configparser.ConfigParser):
 
         return d
 
-    def getargs(self, command):
+    def get_command_args(self, command):
         if command == 'check':
             return self.get_checkargs()
         elif command == 'fix':
@@ -689,10 +689,24 @@ def parse_args(args=None, namespace=None, parser=None):
     if parser is None:
         parser = get_parser()
 
-    args = parser.parse_args(args, namespace)
+    # passing a napespace here doesn't work due to Python issue #29670
+    # (https://bugs.python.org/issue29670)
+    # args = parser.parse_args(args, namespace)
+    args = parser.parse_args(args, namespace=None)
 
     if args.command is None:
         parser.error('command not specified')
+
+    if namespace is not None:
+        command = args.command
+        name = 'get_{}_parser'.format(command)
+        get_parser_func = globals()[name]
+        parser = get_parser_func()
+
+        argv = sys.argv[1:]
+        argv.remove(command)
+        args = parser.parse_args(argv, namespace)
+        args.command = command
 
     if getattr(args, 'loglevel', None) is None:
         args.loglevel = logging.WARNING
@@ -714,7 +728,6 @@ def main():
 
         if getattr(args, 'config', None) is not None:
             cfg = ConfigParser()
-            # cfg.set_defaults()
 
             with open(args.config) as fd:
                 cfg.read_file(fd)
@@ -722,7 +735,7 @@ def main():
             scancfg = cfg.get_scancfg()
 
             # re-parse
-            kwargs = cfg.getargs(args.command)
+            kwargs = cfg.get_command_args(args.command)
             namespace = argparse.Namespace(**kwargs)
             args = parse_args(namespace=namespace)
 
