@@ -1,10 +1,16 @@
 Release History
 ===============
 
-1.1.0 (in development)
+1.2.0 (in development)
 ----------------------
 
-* Workaround for an isuse related to subparsers management.
+* TBW
+
+
+1.1.0 (26/11/2017)
+------------------
+
+* Workaround for an issue related to sub-parsers management.
   See Python issue #29670 (https://bugs.python.org/issue29670)
 * Fixed some typos in help messages
 * The README.rst file has been improved
