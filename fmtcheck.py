@@ -25,6 +25,12 @@ import argparse
 import collections
 import configparser
 
+try:
+    import argcomplete
+except ImportError:
+    argcomplete = None
+else:
+    PYTHON_ARGCOMPLETE_OK = True
 
 __version__ = '1.2.0.dev0'
 
@@ -676,6 +682,9 @@ def get_parser():
     get_check_parser(subparsers)
     get_fix_parser(subparsers)
     get_dumpcfg_parser(subparsers)
+
+    if argcomplete:
+        argcomplete.autocomplete(parser)
 
     return parser
 
