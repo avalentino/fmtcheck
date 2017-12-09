@@ -4,8 +4,8 @@
 """Basic checks on source code
 
 Available checks include: presence of tabs, EOL consistency,
-presence of trailing spaces, conformity to the ASCII encoding and
-line length.
+presence of trailing spaces, presence of an EOL character at the end of
+the file conformity to the ASCII encoding and line length.
 
 Some basic tool for fixing formatting problems is also provided.
 
@@ -22,6 +22,7 @@ import shutil
 import fnmatch
 import logging
 import argparse
+import datetime
 import collections
 import configparser
 
@@ -194,6 +195,9 @@ class SrcTree(object):
 class CheckTool(object):
     """Tool for source code checking."""
 
+    COPYRIGHT_RE = re.compile(
+        b'(?P<copyright>[Cc]opyright([ \t]+(\([Cc]\)))?)[ \t]+\d{4}')
+
     def __init__(self, failfast=False, scancfg=DEFAULT_CFG, **kwargs):
         self.failfast = failfast
         self.scancfg = scancfg
@@ -202,6 +206,8 @@ class CheckTool(object):
         self.check_eol = bool(kwargs.pop('check_eol', True))
         self.check_trailing = bool(kwargs.pop('check_trailing', True))
         self.check_encoding = bool(kwargs.pop('check_encoding', True))
+        self.check_eol_at_eof = bool(kwargs.pop('check_eol_at_eof', True))
+        self.check_copyright = bool(kwargs.pop('check_copyright', True))
 
         self.maxlinelen = int(kwargs.pop('maxlinelen', 0))
         self.eol = Eol(kwargs.pop('eol', Eol.NATIVE))
@@ -234,6 +240,15 @@ class CheckTool(object):
             if len(line) > self.maxlinelen:
                 return True
 
+    def _eol_at_eof_checker(self, data):
+        last_eol_index = data.rfind(b'\n')
+        if last_eol_index == -1 or data[last_eol_index:].strip() != b'':
+            return True
+
+    def _copyright_checker(self, data):
+        if not self.COPYRIGHT_RE.search(data):
+            return True
+
     def _get_checklist(self):
         checklist = collections.OrderedDict()
 
@@ -260,6 +275,12 @@ class CheckTool(object):
         if self.check_encoding:
             key = 'not {}'.format(self.encoding)
             checklist[key] = self._encoding_checker
+
+        if self.check_eol_at_eof:
+            checklist['no eol at eof'] = self._eol_at_eof_checker
+
+        if self.check_copyright:
+            checklist['no copyright'] = self._copyright_checker
 
         if self.maxlinelen:
             checklist['line tool long'] = self._linelen_checker
@@ -424,6 +445,8 @@ class ConfigParser(configparser.ConfigParser):
         d['check_eol'] = bool(tool.check_eol)
         d['check_trailing'] = bool(tool.check_trailing)
         d['check_encoding'] = bool(tool.check_encoding)
+        d['check_eol_at_eof'] = bool(tool.check_eol_at_eof)
+        d['check_copyright'] = bool(tool.check_copyright)
         d['maxlinelen'] = int(tool.maxlinelen)
         d['eol'] = tool.eol.name
         d['encoding'] = tool.encoding
@@ -494,7 +517,7 @@ class ConfigParser(configparser.ConfigParser):
         section = self[sectname]
 
         for key in ('failfast', 'check_tabs', 'check_eol', 'check_trailing',
-                    'check_encoding'):
+                    'check_encoding', 'check_eol_at_eof', 'check_copyright'):
             if key in section:
                 d[key] = self.getboolean(sectname, key)
 
@@ -597,6 +620,14 @@ def get_check_parser(parser=None):
         default=True, help='''disable checks on text encoding:
         source code that is not pure ASCII is considered not valid
         (default: False)''')
+    parser.add_argument(
+        '--no-eof', action='store_false', dest='check_eol_at_eof',
+        default=True, help='''disable checks on the presence of an EOL
+        character at the end of the file (default: False)''')
+    parser.add_argument(
+        '--no-copyright', action='store_false', dest='check_copyright',
+        default=True, help='''disable checks on the presence of the
+        copyrigh line is source files (default: False)''')
 
     parser.add_argument(
         '-l', '--line-length', dest='maxlinelen', type=int, default=0,
@@ -778,6 +809,8 @@ def main():
                 check_eol=args.check_eol,
                 check_trailing=args.check_trailing,
                 check_encoding=args.check_encoding,
+                check_eol_at_eof=args.check_eol_at_eof,
+                check_copyright=args.check_copyright,
                 maxlinelen=args.maxlinelen,
                 failfast=args.failfast,
                 scancfg=scancfg,
