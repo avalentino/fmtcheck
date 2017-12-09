@@ -11,7 +11,6 @@ Some basic tool for fixing formatting problems is also provided.
 
 """
 
-# TODO: make skip patterns and file extensions configurable via command line
 
 import io
 import os
