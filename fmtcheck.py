@@ -420,6 +420,95 @@ class FixTool(object):
             self._fix_file_core(filename, data)
 
 
+class CopyrightTool(object):
+    CHECK_COPYRIGHT_RE = CheckTool.COPYRIGHT_RE.pattern.decode('utf-8')
+    COPYRIGHT_RE_TEMPLATE = (
+        '(?P<copyright>[Cc]opyright([ \t]+(\([Cc]\)))?)'
+        '[ \t]+(?!%(year)d)'
+        '(?P<firstyear>\d{4})'
+        '((-|(,\d{4})*,)(?P<lastyear>\d{4})?)?'
+    )
+    REPL_COPYRIGHT_RE_TEMPLATE = '\g<copyright> \g<firstyear>-%(year)d'
+
+    def __init__(self, copyright_template_path=None, update=True, year=None,
+                 backup_ext=None, scancfg=DEFAULT_CFG):
+        if year is None:
+            year = datetime.date.today().year
+
+        self.copyright_template_path = copyright_template_path
+        self._copyright_template_str = ''   # internal cache
+        self.update = update
+
+        self.year = year
+        self.backup_ext = backup_ext
+        self.scancfg = scancfg
+
+        # NOTE: use the % formatting notation
+        values = dict(year=year)
+        self._copyright_re = re.compile(self.COPYRIGHT_RE_TEMPLATE % values)
+        self._repl_copyright_re = self.REPL_COPYRIGHT_RE_TEMPLATE % values
+        self._check_copyright_re = re.compile(self.CHECK_COPYRIGHT_RE)
+
+    def _load_copyright_template(self):
+        if self.copyright_template_path:
+            with open(self.copyright_template_path) as fd:
+                data = fd.read()
+            self._copyright_template_str = data.format(year=self.year)
+        else:
+            self._copyright_template_str = None
+
+    def _update_copyright_core(self, filename, data):
+        if self.update:
+            self._copyright_re.sub(self._repl_copyright_re, data)
+
+        if (self._copyright_template_str is not None and
+                not self._check_copyright_re.search(data)):
+            data = self._copyright_template_str + data
+
+        with open(filename, 'w') as fd:
+            fd.write(data)
+
+    def update_copyright(self, filename, outfile=None):
+        """Update the copyright in the input file."""
+
+        if self.copyright_template_path:
+            self._load_copyright_template()
+
+        with open(filename, 'rb') as fd:
+            data = fd.read()
+
+        if outfile is None:
+            outfile = filename
+
+            if self.backup_ext:
+                backupfile = filename + self.backup_ext
+                shutil.move(filename, backupfile)
+
+        self.update_copyright(filename, data)
+
+    def scan(self, path='.'):
+        """Update the copyright in all source files in path."""
+
+        if not self.copyright_template_path and not self.update:
+            logging.info('nothing to do: update=False and no template to add')
+
+        if self.copyright_template_path:
+            self._load_copyright_template()
+
+        srctree = SrcTree(
+            path, mode=Mode.TEXT,
+            path_patterns=self.scancfg.path_patterns,
+            skip_path_patterns=self.scancfg.skip_path_patterns,
+            skip_data_patterns=self.scancfg.skip_data_patterns)
+
+        for filename, data in srctree:
+            if self.backup_ext:
+                backupfile = filename + self.backup_ext
+                shutil.move(filename, backupfile)
+
+            self._update_copyright_core(filename, data)
+
+
 class ConfigParser(configparser.ConfigParser):
     def scancfg_to_dict(self, scancfg):
         d = collections.OrderedDict()
@@ -473,10 +562,28 @@ class ConfigParser(configparser.ConfigParser):
 
         return d
 
+    def update_copyright_tool_to_dict(self, tool):
+        d = collections.OrderedDict()
+
+        if tool.copyright_template_path:
+            d['copyright_template_path'] = tool.copyright_template_path
+
+        d['update'] = bool(tool.update)
+
+        if tool.year:
+            d['year'] = tool.year
+
+        if tool.backup_ext:
+            d['backup_ext'] = tool.backup_ext
+
+        return d
+
     def setup_default_config(self):
         cfg = self.scancfg_to_dict(DEFAULT_CFG)
         cfg['check'] = self.checktool_to_dict(CheckTool())
         cfg['fix'] = self.fixtool_to_dict(FixTool())
+        cfg['update-copyright'] = self.update_copyright_tool_to_dict(
+            CopyrightTool())
         self.read_dict(cfg)
 
         self.add_section('logging')
@@ -572,11 +679,44 @@ class ConfigParser(configparser.ConfigParser):
 
         return d
 
+    def get_update_copyright_args(self):
+        d = collections.OrderedDict()
+
+        sectname = 'update-copyright'
+
+        if sectname not in self:
+            return d
+
+        section = self[sectname]
+
+        if 'copyright_template_path' in section:
+            name = 'copyright_template_path'
+            d[name] = self.get(sectname, name)
+
+        if 'update' in section:
+            d['update'] = self.getboolean(sectname, 'update')
+
+        if 'year' in section:
+            d['year'] = self.getint(sectname, 'year')
+
+        if 'backup_ext' in section:
+            d['backup_ext'] = self.getboolean(sectname, 'backup_ext')
+
+        loglevel = self._get_loglevel()
+        if loglevel is not None:
+            d['loglevel'] = loglevel
+
+        return d
+
     def get_command_args(self, command):
         if command == 'check':
             return self.get_checkargs()
         elif command == 'fix':
             return self.get_fixargs()
+        elif command == 'update-copyright':
+            return self.get_update_copyright_args()
+        # elif command == 'dumpcfg':
+        #     return collections.OrderedDict()
         else:
             raise ValueError('unexpected command: {!r}'.format(command))
 
@@ -707,6 +847,64 @@ def get_fix_parser(parser=None):
     return parser
 
 
+def get_update_copyright_parser(parser=None):
+    """Build and return the command line parser for the "update-copyright"
+    command."""
+
+    description = '''Update the copyright line to the specified year or
+    add a copyright statement if it is missing.'''
+
+    if parser is None:
+        parser = argparse.ArgumentParser(description=description)
+    elif isinstance(parser, argparse.Action):
+        parser = parser.add_parser('update-copyright', help=description)
+
+    parser.add_argument(
+        '-v', '--verbose',
+        dest='loglevel', action='store_const', const=logging.INFO,
+        help='enable verbose output')
+    parser.add_argument(
+        '-d', '--debug',
+        dest='loglevel', action='store_const', const=logging.DEBUG,
+        help='enable debug output')
+
+    parser.add_argument(
+        '-t', '--template', dest='copyright_template_path',
+        help='''copyright statement template file.
+        The specification of a template is the only way to enable the
+        function that adds a copyright statement in source file where it is
+        missing.
+        Please note that it is possible to specify only one template, and it
+        shall contain valid code (or comments) for all files it is applied to.
+        For this reason it is not always possible to add the copyright
+        template to files written in different languages (e.g. C++ and Pyhton),
+        otherwhise the operation will produce invalid source files.
+        All the occurrences of the marker "{year}" in the template will be
+        reblaced by the specified year.''')
+    parser.add_argument(
+        '--no-update', action='store_false', dest='update',
+        default=True, help='''disable the update of the date in existing
+        copyright lines (default: False)''')
+    parser.add_argument(
+        '-y', '--year', type=int,
+        help='''specify the last year covered by the copyright
+        (default: %(default)d)''' % dict(default=datetime.date.today().year))
+
+    parser.add_argument(
+        '-b', '--backup', action='store_const', default=False, const='.bak',
+        help='''backup original file contents on a file with the same
+        name + "%(const)s". Default no backup is performed.''')
+
+    parser.add_argument(
+        '-c', '--config', help='path to the configuration file')
+
+    parser.add_argument(
+        'paths', nargs='+', metavar='PATH',
+        help='root of the source tree to scan (default: %(default)r)')
+
+    return parser
+
+
 def get_dumpcfg_parser(parser=None):
     """Build and return the command line parser for the "fix" command."""
 
@@ -741,6 +939,7 @@ def get_parser():
 
     get_check_parser(subparsers)
     get_fix_parser(subparsers)
+    get_update_copyright_parser(subparsers)
     get_dumpcfg_parser(subparsers)
 
     if argcomplete:
@@ -765,7 +964,7 @@ def parse_args(args=None, namespace=None, parser=None):
 
     if namespace is not None:
         command = args.command
-        name = 'get_{}_parser'.format(command)
+        name = 'get_{}_parser'.format(command.replace('-', '_'))
         get_parser_func = globals()[name]
         parser = get_parser_func()
 
@@ -848,6 +1047,16 @@ def main():
                 fix_trailing=args.fix_trailing,
                 fix_eof=args.fix_eof,
                 eol=args.eol,
+                backup_ext=args.backup,
+                scancfg=scancfg,
+            )
+            for path in args.paths:
+                tool.scan(path)
+        elif args.command == 'update-copyright':
+            tool = CopyrightTool(
+                copyright_template_path=args.copyright_template_path,
+                update=args.update,
+                year=args.year,
                 backup_ext=args.backup,
                 scancfg=scancfg,
             )
