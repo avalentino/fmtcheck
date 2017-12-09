@@ -4,7 +4,20 @@ Release History
 1.2.0 (in development)
 ----------------------
 
-* TBW
+* New checks for:
+
+  - the presence on an End Of Line (EOL) character before the
+    End Of File (EOF)
+  - the presence of a copyright line in the file
+
+* New option for fixing missing the EOL at EOF
+* New tool for:
+
+  - updating the copyright date in source files
+  - add a copyright statement (from a template) in source files where
+    it is missing
+
+* Bug fix: honour the log level set from the configuration file
 
 
 1.1.0 (26/11/2017)
