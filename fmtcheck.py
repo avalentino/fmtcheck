@@ -339,11 +339,12 @@ class FixTool(object):
 
     TRIM_RE = re.compile('[ \t]+(?=\n)|[ \t]+$')
 
-    def __init__(self, tabsize=4, fix_trailing=True, eol=Eol.NATIVE,
-                 backup_ext=None, scancfg=DEFAULT_CFG):
+    def __init__(self, tabsize=4, fix_trailing=True, fix_eof=True,
+                 eol=Eol.NATIVE, backup_ext=None, scancfg=DEFAULT_CFG):
         self.tabsize = int(tabsize)
         self.eol = Eol(eol)
         self.fix_trailing = fix_trailing
+        self.fix_eof = fix_eof
 
         self.backup_ext = backup_ext
 
@@ -367,7 +368,13 @@ class FixTool(object):
 
         return line_fixers
 
+    def _eof_fixer(self, data):
+        return data.rstrip() + '\n'
+
     def _fix_file_core(self, filename, data):
+        if self.fix_eof:
+            data = self._eof_fixer(data)
+
         fd = io.StringIO(data)
         with open(filename, 'w', newline=self.eol.value) as out:
             for line in fd:
@@ -459,6 +466,7 @@ class ConfigParser(configparser.ConfigParser):
         d['tabsize'] = int(tool.tabsize)
         d['eol'] = Eol(tool.eol).name
         d['fix_trailing'] = bool(tool.fix_trailing)
+        d['fix_eof'] = bool(tool.fix_eof)
 
         if tool.backup_ext:
             d['backup_ext'] = tool.backup_ext
@@ -677,8 +685,12 @@ def get_fix_parser(parser=None):
         To disable tab substitution set tabsize to 0''')
     parser.add_argument(
         '--no-trailing', action='store_false', dest='fix_trailing',
-        default=True, help='''disable checks on trailing spaces
+        default=True, help='''do not fix trailing spaces
         i.e. white spaces at the end of line (default: False)''')
+    parser.add_argument(
+        '--no-eof', action='store_false', dest='fix_eof',
+        default=True, help='''do not fix missing EOL characters at the end
+        of the file (default: False)''')
 
     parser.add_argument(
         '-b', '--backup', action='store_const', default=False, const='.bak',
@@ -833,6 +845,7 @@ def main():
             tool = FixTool(
                 tabsize=args.tabsize,
                 fix_trailing=args.fix_trailing,
+                fix_eof=args.fix_eof,
                 eol=args.eol,
                 backup_ext=args.backup,
                 scancfg=scancfg,
