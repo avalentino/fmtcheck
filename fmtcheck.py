@@ -804,6 +804,7 @@ def main():
             kwargs = cfg.get_command_args(args.command)
             namespace = argparse.Namespace(**kwargs)
             args = parse_args(namespace=namespace)
+            logging.getLogger().setLevel(args.loglevel)
 
         logging.debug(
             'PATH_PATTERNS: {}'.format(
