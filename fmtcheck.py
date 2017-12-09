@@ -32,6 +32,7 @@ except ImportError:
 else:
     PYTHON_ARGCOMPLETE_OK = True
 
+
 __version__ = '1.2.0.dev0'
 
 
@@ -66,6 +67,22 @@ DEFAULT_CFG = ScanConfig(
     ],
     skip_data_patterns=[],
 )
+
+
+class FakeDirEntry(object):
+    def __init__(self, path):
+        self._path = path
+
+    @property
+    def name(self):
+        return os.path.basename(self._path)
+
+    @property
+    def path(self):
+        return self._path
+
+    def is_dir(self):
+        return os.path.isdir(self._path)
 
 
 class SrcTree(object):
@@ -140,7 +157,7 @@ class SrcTree(object):
 
     def _scan(self, path):
         if os.path.isfile(path):
-            return [path]
+            return [FakeDirEntry(path)]
         else:
             logging.debug('scanning %r', path)
             return os.scandir(path)
