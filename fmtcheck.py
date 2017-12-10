@@ -183,12 +183,12 @@ class SrcTree(object):
                         'unable to read {!r}: {}'.format(entry.path, ex))
                 else:
                     if self._skip_data_re.search(data):
-                        logging.debug('skipping {!r}'.format(entry.path))
+                        logging.debug('skipping %r', entry.path)
                     else:
                         yield entry.path, data
 
             else:
-                logging.debug('skipping {!r}'.format(entry.path))
+                logging.debug('skipping %r', entry.path)
 
 
 class CheckTool(object):
@@ -298,7 +298,7 @@ class CheckTool(object):
         return checklist
 
     def _check_file_core(self, filename, data):
-        logging.debug('checking %s', filename)
+        logging.debug('checking %r', filename)
 
         stats = collections.Counter()
 
@@ -391,7 +391,7 @@ class FixTool(object):
         return data.rstrip() + '\n'
 
     def _fix_file_core(self, filename, data):
-        logging.debug('fixing %s', filename)
+        logging.debug('fixing %r', filename)
 
         if self.fix_eof:
             data = self._eof_fixer(data)
@@ -489,7 +489,7 @@ class CopyrightTool(object):
             self._copyright_template_str = None
 
     def _update_copyright_core(self, filename, data):
-        logging.debug('updating %s', filename)
+        logging.debug('updating %r', filename)
 
         if self.update:
             data = self._copyright_re.sub(self._repl_copyright_re, data)
