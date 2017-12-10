@@ -4,6 +4,8 @@ Release History
 1.3.0 (in development)
 ----------------------
 
+* Factorized setup of common command line options.
+  Added option groups for better readability of the help messages.
 * Support for ReStructuredText copyright format in `update-copyright`
 * Bug fix: actually update copyright dates
 * Improved debug logging

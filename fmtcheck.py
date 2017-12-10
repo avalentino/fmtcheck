@@ -727,6 +727,49 @@ class ConfigParser(configparser.ConfigParser):
             raise ValueError('unexpected command: {!r}'.format(command))
 
 
+def _set_common_perser_args(parser, backup=False):
+    # --- backup -------------------------------------------------------------
+    if backup:
+        backup_group = parser.add_argument_group('backup')
+
+        backup_group.add_argument(
+            '-b', '--backup', action='store_const', default=False,
+            const='.bak', help='''backup original file contents on a file
+            with the same name + "%(const)s".
+            Default no backup is performed.''')
+
+    # --- logging ------------------------------------------------------------
+    log_group = parser.add_argument_group('logging')
+
+    log_group.add_argument(
+        '-q', '--quiet',
+        dest='loglevel', action='store_const', const=logging.ERROR,
+        help='''suppress standard output, only errors are printed to screen
+        (by default only global statistics are printed)''')
+    log_group.add_argument(
+        '-v', '--verbose',
+        dest='loglevel', action='store_const', const=logging.INFO,
+        help='''enable verbose output: for each check failed print an
+        informative line (by default only global statistics are printed)''')
+    log_group.add_argument(
+        '-d', '--debug',
+        dest='loglevel', action='store_const', const=logging.DEBUG,
+        help='''enable debug output (by default only global statistics
+        are printed)''')
+
+    # --- config -------------------------------------------------------------
+    config_group = parser.add_argument_group('config')
+
+    config_group.add_argument(
+        '-c', '--config', help='path to the configuration file')
+
+    # --- path ---------------------------------------------------------------
+    parser.add_argument(
+        'paths', nargs='+', metavar='PATH',
+        help='root of the source tree to scan (default: %(default)r)')
+
+    return parser
+
 def get_check_parser(parser=None):
     """Build and return the command line parser for the "check" command."""
 
@@ -740,22 +783,6 @@ def get_check_parser(parser=None):
         parser = argparse.ArgumentParser(description=description)
     elif isinstance(parser, argparse.Action):
         parser = parser.add_parser('check', help=description)
-
-    parser.add_argument(
-        '-q', '--quiet',
-        dest='loglevel', action='store_const', const=logging.ERROR,
-        help='''suppress standard output, only errors are printed to screen
-        (by default only global statistics are printed)''')
-    parser.add_argument(
-        '-v', '--verbose',
-        dest='loglevel', action='store_const', const=logging.INFO,
-        help='''enable verbose output: for each check failed print an
-        informative line (by default only global statistics are printed)''')
-    parser.add_argument(
-        '-d', '--debug',
-        dest='loglevel', action='store_const', const=logging.DEBUG,
-        help='''enable debug output (by default only global statistics
-        are printed)''')
 
     parser.add_argument(
         '--no-tabs', action='store_false', dest='check_tabs', default=True,
@@ -792,12 +819,7 @@ def get_check_parser(parser=None):
         '-f', '--failfast', action='store_true', default=False,
         help='exit immediately as soon as a check fails')
 
-    parser.add_argument(
-        '-c', '--config', help='path to the configuration file')
-
-    parser.add_argument(
-        'paths', nargs='+', metavar='PATH',
-        help='root of the source tree to scan (default: %(default)r)')
+    parser = _set_common_perser_args(parser)
 
     return parser
 
@@ -812,15 +834,6 @@ def get_fix_parser(parser=None):
         parser = argparse.ArgumentParser(description=description)
     elif isinstance(parser, argparse.Action):
         parser = parser.add_parser('fix', help=description)
-
-    parser.add_argument(
-        '-v', '--verbose',
-        dest='loglevel', action='store_const', const=logging.INFO,
-        help='enable verbose output')
-    parser.add_argument(
-        '-d', '--debug',
-        dest='loglevel', action='store_const', const=logging.DEBUG,
-        help='enable debug output')
 
     parser.add_argument(
         '--eol', default=Eol.NATIVE, choices=list(Eol.__members__.keys()),
@@ -838,17 +851,7 @@ def get_fix_parser(parser=None):
         default=True, help='''do not fix missing EOL characters at the end
         of the file (default: False)''')
 
-    parser.add_argument(
-        '-b', '--backup', action='store_const', default=False, const='.bak',
-        help='''backup original file contents on a file with the same
-        name + "%(const)s". Default no backup is performed.''')
-
-    parser.add_argument(
-        '-c', '--config', help='path to the configuration file')
-
-    parser.add_argument(
-        'paths', nargs='+', metavar='PATH',
-        help='root of the source tree to scan (default: %(default)r)')
+    parser = _set_common_perser_args(parser, backup=True)
 
     return parser
 
@@ -864,15 +867,6 @@ def get_update_copyright_parser(parser=None):
         parser = argparse.ArgumentParser(description=description)
     elif isinstance(parser, argparse.Action):
         parser = parser.add_parser('update-copyright', help=description)
-
-    parser.add_argument(
-        '-v', '--verbose',
-        dest='loglevel', action='store_const', const=logging.INFO,
-        help='enable verbose output')
-    parser.add_argument(
-        '-d', '--debug',
-        dest='loglevel', action='store_const', const=logging.DEBUG,
-        help='enable debug output')
 
     parser.add_argument(
         '-t', '--template', dest='copyright_template_path',
@@ -896,17 +890,7 @@ def get_update_copyright_parser(parser=None):
         help='''specify the last year covered by the copyright
         (default: %(default)d)''' % dict(default=datetime.date.today().year))
 
-    parser.add_argument(
-        '-b', '--backup', action='store_const', default=False, const='.bak',
-        help='''backup original file contents on a file with the same
-        name + "%(const)s". Default no backup is performed.''')
-
-    parser.add_argument(
-        '-c', '--config', help='path to the configuration file')
-
-    parser.add_argument(
-        'paths', nargs='+', metavar='PATH',
-        help='root of the source tree to scan (default: %(default)r)')
+    parser = _set_common_perser_args(parser, backup=True)
 
     return parser
 
@@ -920,11 +904,6 @@ def get_dumpcfg_parser(parser=None):
         parser = argparse.ArgumentParser(description=description)
     elif isinstance(parser, argparse.Action):
         parser = parser.add_parser('dumpcfg', help=description)
-
-    parser.add_argument(
-        '-d', '--debug',
-        dest='loglevel', action='store_const', const=logging.DEBUG,
-        help='enable debug output')
 
     return parser
 
