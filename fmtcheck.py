@@ -288,6 +288,8 @@ class CheckTool(object):
         return checklist
 
     def _check_file_core(self, filename, data):
+        logging.debug('checking %s', filename)
+
         stats = collections.Counter()
 
         for key, checkfunc in self._checklist.items():
@@ -372,6 +374,8 @@ class FixTool(object):
         return data.rstrip() + '\n'
 
     def _fix_file_core(self, filename, data):
+        logging.debug('fixing %s', filename)
+
         if self.fix_eof:
             data = self._eof_fixer(data)
 
@@ -458,6 +462,8 @@ class CopyrightTool(object):
             self._copyright_template_str = None
 
     def _update_copyright_core(self, filename, data):
+        logging.debug('updating %s', filename)
+
         if self.update:
             self._copyright_re.sub(self._repl_copyright_re, data)
 

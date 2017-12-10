@@ -4,7 +4,7 @@ Release History
 1.3.0 (in development)
 ----------------------
 
-* TBW
+* Improved debug logging
 
 
 1.2.0 (07/12/2017)
