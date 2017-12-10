@@ -757,6 +757,21 @@ def _set_common_perser_args(parser, backup=False):
         help='''enable debug output (by default only global statistics
         are printed)''')
 
+    # --- scanning -----------------------------------------------------------
+    scan_group = parser.add_argument_group('source tree scanning')
+
+    scan_group.add_argument(
+        '--patterns', dest='path_patterns',
+        help='''comma separated list of glob pattern to scan.
+        Default: {}'''.format(','.join(DEFAULT_CFG.path_patterns)))
+    scan_group.add_argument(
+        '--skip', dest='skip_path_patterns',
+        help='''comma separated list of glob pattern to skip.
+        Default: {}'''.format(','.join(DEFAULT_CFG.skip_path_patterns)))
+    scan_group.add_argument(
+        '--no-skip', dest='skip_path_patterns', action='store_const', const=[],
+        help='skip no file during the scanning of the directory tree')
+
     # --- config -------------------------------------------------------------
     config_group = parser.add_argument_group('config')
 
@@ -989,6 +1004,25 @@ def main():
             namespace = argparse.Namespace(**kwargs)
             args = parse_args(namespace=namespace)
             logging.getLogger().setLevel(args.loglevel)
+
+        if args.path_patterns is not None:
+            path_patterns = args.path_patterns.split(',')
+
+            scancfg = ScanConfig(
+                path_patterns,
+                scancfg.skip_path_patterns,
+                scancfg.skip_data_patterns)
+
+        if args.skip_path_patterns is not None:
+            if args.skip_path_patterns == []:
+                skip_path_patterns = []
+            else:
+                skip_path_patterns = args.skip_path_patterns.split(',')
+
+            scancfg = ScanConfig(
+                scancfg.path_patterns,
+                skip_path_patterns,
+                scancfg.skip_data_patterns)
 
         logging.debug(
             'PATH_PATTERNS: {}'.format(
