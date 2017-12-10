@@ -427,7 +427,7 @@ class FixTool(object):
 class CopyrightTool(object):
     CHECK_COPYRIGHT_RE = CheckTool.COPYRIGHT_RE.pattern.decode('utf-8')
     COPYRIGHT_RE_TEMPLATE = (
-        '(?P<copyright>[Cc]opyright([ \t]+(\([Cc]\)))?)'
+        '(?P<copyright>:?[Cc]opyright:?([ \t]+(\([Cc]\)))?)'
         '[ \t]+(?!%(year)d)'
         '(?P<firstyear>\d{4})'
         '((-|(,\d{4})*,)(?P<lastyear>\d{4})?)?'
