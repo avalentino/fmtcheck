@@ -1,7 +1,7 @@
 fmtcheck
 ========
 
-:copiright: 2017 Antonio Valentino
+:copyright: 2017 Antonio Valentino
 
 Check the conformity of source code to basic standards.
 
