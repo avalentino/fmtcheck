@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""Basic checks on source code
+"""Ensure the source code conformity to basic formatting standards.
 
-Available checks include: presence of tabs, EOL consistency,
-presence of trailing spaces, presence of an EOL character at the end of
-the file conformity to the ASCII encoding and line length.
-
-Some basic tool for fixing formatting problems is also provided.
+The tool provides sub-commands to "check" the conformity of all files in a
+source tree to basic formatting standards, to "fix" common formatting
+mistakes, and also to set and update the copyright statement
+("update-copyright" sub-command) in source files.
 
 """
 
@@ -193,7 +192,18 @@ class SrcTree(object):
 
 
 class CheckTool(object):
-    """Tool for source code checking."""
+    """Check the conformity of source code to basic standards.
+
+    Available checks include: end of line (EOL) consistency,
+    presence of trailing spaces at the end of a source code line,
+    presence of tabs, conformity to the ASCII encoding, maximum line length,
+    presence of an End Of Line (EOL) character before the End Of File (EOF),
+    presence of a copyright statement is source files.
+
+    By default the tool prints how many files fail the check,
+    for each of the selected checks.
+
+    """
 
     COPYRIGHT_RE = re.compile(
         b'(?P<copyright>[Cc]opyright([ \t]+(\([Cc]\)))?)[ \t]+\d{4}')
@@ -337,7 +347,14 @@ class CheckTool(object):
 
 
 class FixTool(object):
-    """Tool for source code fixing."""
+    """Fix basic formatting issues.
+
+    Available fixes include:  end of line (EOL) consistency,
+    trailing spaces removal, substitution of tabs with spaces,
+    ensuring that an End Of Line (EOL) character is always present
+    before the End Of FIle (EOF).
+
+    """
 
     TRIM_RE = re.compile('[ \t]+(?=\n)|[ \t]+$')
 
@@ -425,6 +442,16 @@ class FixTool(object):
 
 
 class CopyrightTool(object):
+    """Update or add the copyright statement is source files.
+
+    The copyright statement in source files is updated to the current year
+    (if not differently specified by the user).
+
+    If a source file does not have a copyright statement it can be added
+    by providing a suiteble template.
+
+    """
+
     CHECK_COPYRIGHT_RE = CheckTool.COPYRIGHT_RE.pattern.decode('utf-8')
     COPYRIGHT_RE_TEMPLATE = (
         '(?P<copyright>:?[Cc]opyright:?([ \t]+(\([Cc]\)))?)'
@@ -727,6 +754,10 @@ class ConfigParser(configparser.ConfigParser):
             raise ValueError('unexpected command: {!r}'.format(command))
 
 
+def _summary_line(s):
+    return s.split('\n\n', 1)[0]
+
+
 def _set_common_perser_args(parser, backup=False):
     # --- backup -------------------------------------------------------------
     if backup:
@@ -744,18 +775,15 @@ def _set_common_perser_args(parser, backup=False):
     log_group.add_argument(
         '-q', '--quiet',
         dest='loglevel', action='store_const', const=logging.ERROR,
-        help='''suppress standard output, only errors are printed to screen
-        (by default only global statistics are printed)''')
+        help='suppress standard output, only errors are printed to screen')
     log_group.add_argument(
         '-v', '--verbose',
         dest='loglevel', action='store_const', const=logging.INFO,
-        help='''enable verbose output: for each check failed print an
-        informative line (by default only global statistics are printed)''')
+        help='enable verbose output')
     log_group.add_argument(
         '-d', '--debug',
         dest='loglevel', action='store_const', const=logging.DEBUG,
-        help='''enable debug output (by default only global statistics
-        are printed)''')
+        help='enable debug output')
 
     # --- scanning -----------------------------------------------------------
     scan_group = parser.add_argument_group('source tree scanning')
@@ -785,19 +813,17 @@ def _set_common_perser_args(parser, backup=False):
 
     return parser
 
+
 def get_check_parser(parser=None):
     """Build and return the command line parser for the "check" command."""
 
-    description = '''Check the conformity of source code to basic
-    standards: end of line (EOL) consistency, trailing spaces,
-    presence of tabs, conformity to the ASCII encoding, line length.
-    By default the program prints how many files fail the check,
-    for each of the selected checks.'''
-
     if parser is None:
-        parser = argparse.ArgumentParser(description=description)
+        parser = argparse.ArgumentParser(description=CheckTool.__doc__)
     elif isinstance(parser, argparse.Action):
-        parser = parser.add_parser('check', help=description)
+        parser = parser.add_parser(
+            'check',
+            description=CheckTool.__doc__,
+            help=_summary_line(CheckTool.__doc__))
 
     parser.add_argument(
         '--no-tabs', action='store_false', dest='check_tabs', default=True,
@@ -823,7 +849,7 @@ def get_check_parser(parser=None):
     parser.add_argument(
         '--no-copyright', action='store_false', dest='check_copyright',
         default=True, help='''disable checks on the presence of the
-        copyrigh line is source files (default: False)''')
+        copyright line is source files (default: False)''')
 
     parser.add_argument(
         '-l', '--line-length', dest='maxlinelen', type=int, default=0,
@@ -842,13 +868,13 @@ def get_check_parser(parser=None):
 def get_fix_parser(parser=None):
     """Build and return the command line parser for the "fix" command."""
 
-    description = '''Fix basic formatting issues related to spacing:
-    end of line (EOL) consistency, trailing spaces, presence of tabs.'''
-
     if parser is None:
-        parser = argparse.ArgumentParser(description=description)
+        parser = argparse.ArgumentParser(description=FixTool.__doc__)
     elif isinstance(parser, argparse.Action):
-        parser = parser.add_parser('fix', help=description)
+        parser = parser.add_parser(
+            'fix',
+            description=FixTool.__doc__,
+            help=_summary_line(FixTool.__doc__))
 
     parser.add_argument(
         '--eol', default=Eol.NATIVE, choices=list(Eol.__members__.keys()),
@@ -875,13 +901,13 @@ def get_update_copyright_parser(parser=None):
     """Build and return the command line parser for the "update-copyright"
     command."""
 
-    description = '''Update the copyright line to the specified year or
-    add a copyright statement if it is missing.'''
-
     if parser is None:
-        parser = argparse.ArgumentParser(description=description)
+        parser = argparse.ArgumentParser(description=CopyrightTool.__doc__)
     elif isinstance(parser, argparse.Action):
-        parser = parser.add_parser('update-copyright', help=description)
+        parser = parser.add_parser(
+            'update-copyright',
+            description=CopyrightTool.__doc__,
+            help=_summary_line(CopyrightTool.__doc__))
 
     parser.add_argument(
         '-t', '--template', dest='copyright_template_path',
@@ -893,9 +919,9 @@ def get_update_copyright_parser(parser=None):
         shall contain valid code (or comments) for all files it is applied to.
         For this reason it is not always possible to add the copyright
         template to files written in different languages (e.g. C++ and Pyhton),
-        otherwhise the operation will produce invalid source files.
+        otherwise the operation will produce invalid source files.
         All the occurrences of the marker "{year}" in the template will be
-        reblaced by the specified year.''')
+        replaced by the specified year.''')
     parser.add_argument(
         '--no-update', action='store_false', dest='update',
         default=True, help='''disable the update of the date in existing
@@ -913,12 +939,21 @@ def get_update_copyright_parser(parser=None):
 def get_dumpcfg_parser(parser=None):
     """Build and return the command line parser for the "fix" command."""
 
-    description = '''Dump the default configuration to stdout.'''
+    description = '''Dump to screen the default configuration
+    (in .INI format).
+
+    The dumped configuration can be used to write a custom configuration
+    file and avoid to pass options via command line.
+
+    '''
 
     if parser is None:
         parser = argparse.ArgumentParser(description=description)
     elif isinstance(parser, argparse.Action):
-        parser = parser.add_parser('dumpcfg', help=description)
+        parser = parser.add_parser(
+            'dumpcfg',
+            description=description,
+            help=_summary_line(description))
 
     return parser
 
@@ -928,8 +963,7 @@ def get_parser():
 
     parser = argparse.ArgumentParser(
         prog=PROG, epilog='Copyright (C) 2017 Antonio Valentino',
-        description='''%(prog)s performs basic formatting checks/fixes
-        on source code.''')
+        description=__doc__)
 
     parser.add_argument(
         '--version', action='version',
