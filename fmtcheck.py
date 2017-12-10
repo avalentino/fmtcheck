@@ -465,7 +465,7 @@ class CopyrightTool(object):
         logging.debug('updating %s', filename)
 
         if self.update:
-            self._copyright_re.sub(self._repl_copyright_re, data)
+            data = self._copyright_re.sub(self._repl_copyright_re, data)
 
         if (self._copyright_template_str is not None and
                 not self._check_copyright_re.search(data)):

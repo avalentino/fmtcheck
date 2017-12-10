@@ -4,6 +4,7 @@ Release History
 1.3.0 (in development)
 ----------------------
 
+* Bug fix: actually update copyright dates
 * Improved debug logging
 
 
