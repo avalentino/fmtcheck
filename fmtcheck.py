@@ -590,8 +590,7 @@ class ConfigParser(configparser.ConfigParser):
         d['fix_trailing'] = bool(tool.fix_trailing)
         d['fix_eof'] = bool(tool.fix_eof)
 
-        if tool.backup_ext:
-            d['backup_ext'] = tool.backup_ext
+        d['backup'] = bool(tool.backup_ext is not None)
 
         return d
 
@@ -606,8 +605,7 @@ class ConfigParser(configparser.ConfigParser):
         if tool.year:
             d['year'] = tool.year
 
-        if tool.backup_ext:
-            d['backup_ext'] = tool.backup_ext
+        d['backup'] = bool(tool.backup_ext is not None)
 
         return d
 
@@ -703,8 +701,8 @@ class ConfigParser(configparser.ConfigParser):
         if 'fix_trailing' in section:
             d['fix_trailing'] = self.getboolean(sectname, 'fix_trailing')
 
-        if 'backup_ext' in section:
-            d['backup_ext'] = self.getboolean(sectname, 'backup_ext')
+        if self.getboolean(sectname, 'backup', fallback=None):
+            d['backup_ext'] = '.bak'
 
         loglevel = self._get_loglevel()
         if loglevel is not None:
@@ -732,8 +730,8 @@ class ConfigParser(configparser.ConfigParser):
         if 'year' in section:
             d['year'] = self.getint(sectname, 'year')
 
-        if 'backup_ext' in section:
-            d['backup_ext'] = self.getboolean(sectname, 'backup_ext')
+        if self.getboolean(sectname, 'backup', fallback=None):
+            d['backup_ext'] = '.bak'
 
         loglevel = self._get_loglevel()
         if loglevel is not None:

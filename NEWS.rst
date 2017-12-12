@@ -7,6 +7,7 @@ Release History
 * Feature: now it is possible to specify scanning parameters form the
   command line (new options added)
 * General update of docstrings and online command help
+* Improved management of the "backup" option
 * Factorized setup of common command line options.
   Added option groups for better readability of the help messages.
 * Support for ReStructuredText copyright format in `update-copyright`
