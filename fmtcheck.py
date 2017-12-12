@@ -1037,7 +1037,7 @@ def main():
             args = parse_args(namespace=namespace)
             logging.getLogger().setLevel(args.loglevel)
 
-        if args.path_patterns is not None:
+        if getattr(args, 'path_patterns', None) is not None:
             path_patterns = args.path_patterns.split(',')
 
             scancfg = ScanConfig(
@@ -1045,7 +1045,7 @@ def main():
                 scancfg.skip_path_patterns,
                 scancfg.skip_data_patterns)
 
-        if args.skip_path_patterns is not None:
+        if getattr(args, 'skip_path_patterns', None) is not None:
             if args.skip_path_patterns == []:
                 skip_path_patterns = []
             else:
