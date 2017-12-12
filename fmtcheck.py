@@ -244,7 +244,7 @@ class CheckTool(object):
         if self.eol is None:
             line_iterator = data.splitlines()
         else:
-            line_iterator = data.split(self.eol.value)
+            line_iterator = data.split(self.eol.value.encode('ascii'))
 
         for line in line_iterator:
             if len(line) > self.maxlinelen:

@@ -11,6 +11,7 @@ Release History
   Added option groups for better readability of the help messages.
 * Support for ReStructuredText copyright format in `update-copyright`
 * Bug fix: actually update copyright dates
+* Fix line length check (split lines with the correct separator)
 * Improved debug logging
 
 
