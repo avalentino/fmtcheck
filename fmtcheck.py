@@ -610,15 +610,17 @@ class ConfigParser(configparser.ConfigParser):
         return d
 
     def setup_default_config(self):
+        self.add_section('logging')
+        self.set('logging', 'loglevel', 'WARNING')
+
         cfg = self.scancfg_to_dict(DEFAULT_CFG)
+
         cfg['check'] = self.checktool_to_dict(CheckTool())
         cfg['fix'] = self.fixtool_to_dict(FixTool())
         cfg['update-copyright'] = self.update_copyright_tool_to_dict(
             CopyrightTool())
-        self.read_dict(cfg)
 
-        self.add_section('logging')
-        self.set('logging', 'loglevel', 'WARNING')
+        self.read_dict(cfg)
 
     def get_scancfg(self):
         if self.has_section('path_patterns'):
