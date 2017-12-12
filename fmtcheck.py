@@ -955,6 +955,11 @@ def get_dumpcfg_parser(parser=None):
             description=description,
             help=_summary_line(description))
 
+    parser.add_argument(
+        '-d', '--debug',
+        dest='loglevel', action='store_const', const=logging.DEBUG,
+        help='enable debug output')
+
     return parser
 
 
