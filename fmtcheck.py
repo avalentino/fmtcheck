@@ -33,7 +33,7 @@ else:
     PYTHON_ARGCOMPLETE_OK = True
 
 
-__version__ = '1.3.0.dev0'
+__version__ = '1.3.0.dev1'
 
 
 PROG = 'fmtcheck'
@@ -207,6 +207,8 @@ class CheckTool(object):
 
     COPYRIGHT_RE = re.compile(
         b'(?P<copyright>[Cc]opyright([ \t]+(\([Cc]\)))?)[ \t]+\d{4}')
+    RELATIVE_INCLUDE_RE = re.compile(
+        b'^[ \t]*#include[ \t]"\.\.', re.MULTILINE)
 
     def __init__(self, failfast=False, scancfg=DEFAULT_CFG, **kwargs):
         self.failfast = failfast
@@ -217,6 +219,8 @@ class CheckTool(object):
         self.check_trailing = bool(kwargs.pop('check_trailing', True))
         self.check_encoding = bool(kwargs.pop('check_encoding', True))
         self.check_eol_at_eof = bool(kwargs.pop('check_eol_at_eof', True))
+        self.check_relative_include = bool(
+            kwargs.pop('check_relative_include', True))
         self.check_copyright = bool(kwargs.pop('check_copyright', True))
 
         self.maxlinelen = int(kwargs.pop('maxlinelen', 0))
@@ -255,6 +259,10 @@ class CheckTool(object):
         if last_eol_index == -1 or data[last_eol_index:].strip() != b'':
             return True
 
+    def _relative_include_checker(self, data):
+        if self.RELATIVE_INCLUDE_RE.search(data):
+            return True
+
     def _copyright_checker(self, data):
         if not self.COPYRIGHT_RE.search(data):
             return True
@@ -288,6 +296,9 @@ class CheckTool(object):
 
         if self.check_eol_at_eof:
             checklist['no eol at eof'] = self._eol_at_eof_checker
+
+        if self.check_relative_include:
+            checklist['relative include'] = self._relative_include_checker
 
         if self.check_copyright:
             checklist['no copyright'] = self._copyright_checker
@@ -575,6 +586,7 @@ class ConfigParser(configparser.ConfigParser):
         d['check_trailing'] = bool(tool.check_trailing)
         d['check_encoding'] = bool(tool.check_encoding)
         d['check_eol_at_eof'] = bool(tool.check_eol_at_eof)
+        d['check_relative_include'] = bool(tool.check_relative_include)
         d['check_copyright'] = bool(tool.check_copyright)
         d['maxlinelen'] = int(tool.maxlinelen)
         d['eol'] = tool.eol.name
@@ -665,7 +677,8 @@ class ConfigParser(configparser.ConfigParser):
         section = self[sectname]
 
         for key in ('failfast', 'check_tabs', 'check_eol', 'check_trailing',
-                    'check_encoding', 'check_eol_at_eof', 'check_copyright'):
+                    'check_encoding', 'check_eol_at_eof',
+                    'check_relative_include', 'check_copyright'):
             if key in section:
                 d[key] = self.getboolean(sectname, key)
 
@@ -846,6 +859,11 @@ def get_check_parser(parser=None):
         '--no-eof', action='store_false', dest='check_eol_at_eof',
         default=True, help='''disable checks on the presence of an EOL
         character at the end of the file (default: False)''')
+    parser.add_argument(
+        '--no-relative-include', action='store_false',
+        dest='check_relative_include', default=True,
+        help='''disable checks on the presence of C/C++ "#include"
+        statements with relative path (default: False)''')
     parser.add_argument(
         '--no-copyright', action='store_false', dest='check_copyright',
         default=True, help='''disable checks on the presence of the
@@ -1080,6 +1098,7 @@ def main():
                 check_trailing=args.check_trailing,
                 check_encoding=args.check_encoding,
                 check_eol_at_eof=args.check_eol_at_eof,
+                check_relative_include=args.check_relative_include,
                 check_copyright=args.check_copyright,
                 maxlinelen=args.maxlinelen,
                 failfast=args.failfast,
