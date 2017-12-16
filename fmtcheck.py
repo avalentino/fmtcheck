@@ -33,7 +33,7 @@ else:
     PYTHON_ARGCOMPLETE_OK = True
 
 
-__version__ = '1.3.0'
+__version__ = '1.4.0.dev0'
 
 
 PROG = 'fmtcheck'
