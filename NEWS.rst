@@ -1,20 +1,24 @@
 Release History
 ===============
 
-1.3.0 (in development)
-----------------------
+1.3.0 (16/12/2017)
+------------------
 
-* Feature: now it is possible to specify scanning parameters form the
-  command line (new options added)
+* Now it is possible to specify scanning parameters form the command line
+  (new options added)
 * New option for checking C/C++ relative includes
-* General update of docstrings and online command help
+* General update of doc-strings and online command help
 * Improved management of the "backup" option
 * Factorized setup of common command line options.
   Added option groups for better readability of the help messages.
 * Support for ReStructuredText copyright format in `update-copyright`
-* Bug fix: actually update copyright dates
-* Fix line length check (split lines with the correct separator)
-* Improved debug logging
+* Log more detailed information about long lines
+* Include the `NEWS.rst` file in the distribution
+* Bug fixes:
+
+  - Actually update copyright dates
+  - Fix line length check (split lines with the correct separator)
+  - Improved debug logging
 
 
 1.2.0 (07/12/2017)
