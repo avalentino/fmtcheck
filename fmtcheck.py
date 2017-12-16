@@ -251,8 +251,10 @@ class CheckTool(object):
         else:
             line_iterator = data.split(self.eol.value.encode('ascii'))
 
-        for line in line_iterator:
+        for lineno, line in enumerate(line_iterator):
             if len(line) > self.maxlinelen:
+                logging.info(
+                    'line %d is %d characters long', lineno+1, len(line))
                 return True
 
     def _eol_at_eof_checker(self, data):
