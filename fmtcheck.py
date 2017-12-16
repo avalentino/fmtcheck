@@ -209,6 +209,7 @@ class CheckTool(object):
         b'(?P<copyright>[Cc]opyright([ \t]+(\([Cc]\)))?)[ \t]+\d{4}')
     RELATIVE_INCLUDE_RE = re.compile(
         b'^[ \t]*#include[ \t]"\.\.', re.MULTILINE)
+    #   b'^[ \t]*#include[ \t]"\.{1,2}', re.MULTILINE)  # stricter check
 
     def __init__(self, failfast=False, scancfg=DEFAULT_CFG, **kwargs):
         self.failfast = failfast
