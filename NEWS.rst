@@ -9,6 +9,7 @@ Release History
   :program:`clang-format` tool (if available).
   See also https://clang.llvm.org/docs/ClangFormat.html.
 * Improved docstrings and descriptions.
+* Update copyright statement date.
 * Fix linter warnings.
 * Fixed a bug in the :meth:`CopyrightTool.update_copyright` method
   that caused infinite recursive calls.

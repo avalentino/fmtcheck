@@ -1173,7 +1173,7 @@ def get_parser():
     """Build and return the command line parser."""
 
     parser = argparse.ArgumentParser(
-        prog=PROG, epilog='Copyright (C) 2017 Antonio Valentino',
+        prog=PROG, epilog='Copyright (C) 2017-2018 Antonio Valentino',
         description=__doc__)
 
     parser.add_argument(

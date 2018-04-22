@@ -388,6 +388,6 @@ Example::
 License
 -------
 
-:copyright: 2017 Antonio Valentino
+:copyright: 2017-2018 Antonio Valentino
 
 BSD 3-Clause License (see LICENSE file).
