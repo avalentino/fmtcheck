@@ -535,7 +535,7 @@ class CopyrightTool(object):
                 backupfile = filename + self.backup_ext
                 shutil.move(filename, backupfile)
 
-        self.update_copyright(filename, data)
+        self._update_copyright_core(outfile, data)
 
     def scan(self, path='.'):
         """Update the copyright in all source files in path."""

@@ -6,7 +6,8 @@ Release History
 
 * Improved docstrings and descriptions.
 * Fix linter warnings.
-
+* Fixed a bug in the :meth:`CopyrightTool.update_copyright` method
+  that caused infinite recursive calls.
 
 1.3.0 (16/12/2017)
 ------------------
