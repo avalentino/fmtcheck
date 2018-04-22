@@ -74,10 +74,10 @@ The help option can be also used with all sub-commands.
 The `check` sub-command allows to perform the following checks on the
 source code:
 
-* the presence of tabs, 
-* EOL consistency,
-* the presence of trailing spaces, 
-* conformity to the ASCII encoding. and
+* the presence of tabs,
+* end of line (EOL) consistency,
+* the presence of trailing spaces at the end of a source code line,
+* conformity to the ASCII encoding,
 * code lines not longer than the maximum specified value,
 * the presence of an End Of Line (EOL) character before the End Of File (EOF),
 * the presence of a copyright statement is source files.
@@ -163,6 +163,15 @@ Example::
 
 `fix` sub-command
 ~~~~~~~~~~~~~~~~~
+
+The `fix` sub-command allows to perform the following fixes on the
+source code:
+
+* end of line (EOL) consistency,
+* trailing spaces removal,
+* substitution of tabs with spaces, and
+* ensuring that an End Of Line (EOL) character is always present before
+  the End Of File (EOF).
 
 The `fix` sub-command has the following options::
 

@@ -196,8 +196,9 @@ class CheckTool(object):
 
     Available checks include: end of line (EOL) consistency,
     presence of trailing spaces at the end of a source code line,
-    presence of tabs, conformity to the ASCII encoding, maximum line length,
-    presence of an End Of Line (EOL) character before the End Of File (EOF),
+    presence of tabs, conformity to the ASCII encoding,
+    maximum line length, presence of an End Of Line (EOL) character
+    before the End Of File (EOF),
     presence of a copyright statement is source files.
 
     By default the tool prints how many files fail the check,
@@ -326,7 +327,7 @@ class CheckTool(object):
         return stats
 
     def check_file(self, filename):
-        """Perform checks on the input data."""
+        """Perform checks on the specified file."""
 
         # ensure to be in sync with the current status of flags
         self._checklist = self._get_checklist()
@@ -363,10 +364,10 @@ class CheckTool(object):
 class FixTool(object):
     """Fix basic formatting issues.
 
-    Available fixes include:  end of line (EOL) consistency,
+    Available fixes include: end of line (EOL) consistency,
     trailing spaces removal, substitution of tabs with spaces,
     ensuring that an End Of Line (EOL) character is always present
-    before the End Of FIle (EOF).
+    before the End Of File (EOF).
 
     """
 

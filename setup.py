@@ -21,12 +21,13 @@ def get_version():
 setup(
     name='fmtcheck',
     version=get_version(),
-    description='Check the conformity of source code to basic standards.',
-    long_description='''Check the conformity of source code to basic standards.
-    Available checks include: presence of tabs, EOL consistency,
-    presence of trailing speces, coformity to the ASCII encoding and
-    line length.
-    Some basic tool for fixing formatting problems is also provided.''',
+    description='fmtcheck ensures the conformity of code to basic standards.',
+    long_description='''fmtcheck ensures the conformity of source code to
+    basic formatting standards.
+    The tool provides sub-commands to "check" the conformity of all files in a
+    source tree to basic formatting standards, to "fix" common formatting
+    mistakes, and also to set and update the copyright statement
+    ("update-copyright" sub-command) in source files.''',
     url='https://github.com/avalentino/fmtcheck',
     author='Antonio Valentino',
     author_email='antonio.valentino@tiscali.it',
