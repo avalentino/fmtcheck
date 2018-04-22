@@ -88,7 +88,7 @@ class FakeDirEntry(object):
 class SrcTree(object):
     """Tree object that provides smart iteration features."""
 
-    def __init__(self, path='.', mode='r',
+    def __init__(self, path='.', mode=Mode.TEXT,
                  path_patterns=DEFAULT_CFG.path_patterns,
                  skip_path_patterns=DEFAULT_CFG.skip_path_patterns,
                  skip_data_patterns=DEFAULT_CFG.skip_data_patterns):
@@ -155,7 +155,8 @@ class SrcTree(object):
 
         self._skip_data_re = re.compile(pattern)
 
-    def _scan(self, path):
+    @staticmethod
+    def _scan(path):
         if os.path.isfile(path):
             return [FakeDirEntry(path)]
         else:
@@ -176,7 +177,7 @@ class SrcTree(object):
                 #     yield item
             elif self._path_re.match(entry.name):
                 try:
-                    with open(entry.path, self.mode.value) as fd:
+                    with open(entry.path, str(self.mode.value)) as fd:
                         data = fd.read()
                 except UnicodeDecodeError as ex:
                     logging.warning(
@@ -235,13 +236,13 @@ class CheckTool(object):
                 '__init__() got an unexpected keyword argument '
                 '{!r}'.format(key))
 
-        self._checklist = ()
+        self._checklist = collections.OrderedDict()
 
     def _encoding_checker(self, data):
         for lineno, line in enumerate(data.splitlines(), 1):
             try:
                 line.decode(self.encoding)
-            except UnicodeDecodeError as ex:
+            except UnicodeDecodeError:
                 logging.info(
                     'unable to decode line n. {}: {!r}'.format(lineno, line))
                 return True
@@ -258,7 +259,8 @@ class CheckTool(object):
                     'line %d is %d characters long', lineno+1, len(line))
                 return True
 
-    def _eol_at_eof_checker(self, data):
+    @staticmethod
+    def _eol_at_eof_checker(data):
         last_eol_index = data.rfind(b'\n')
         if last_eol_index == -1 or data[last_eol_index:].strip() != b'':
             return True
@@ -402,7 +404,8 @@ class FixTool(object):
 
         return line_fixers
 
-    def _eof_fixer(self, data):
+    @staticmethod
+    def _eof_fixer(data):
         return data.rstrip() + '\n'
 
     def _fix_file_core(self, filename, data):
@@ -412,7 +415,7 @@ class FixTool(object):
             data = self._eof_fixer(data)
 
         fd = io.StringIO(data)
-        with open(filename, 'w', newline=self.eol.value) as out:
+        with open(filename, 'w', newline=str(self.eol.value)) as out:
             for line in fd:
                 for line_fixer in self._line_fixers:
                     line = line_fixer(line)
@@ -558,7 +561,9 @@ class CopyrightTool(object):
 
 
 class ConfigParser(configparser.ConfigParser):
-    def scancfg_to_dict(self, scancfg):
+
+    @staticmethod
+    def scancfg_to_dict(scancfg):
         d = collections.OrderedDict()
 
         if scancfg.path_patterns:
@@ -581,7 +586,8 @@ class ConfigParser(configparser.ConfigParser):
 
         return d
 
-    def checktool_to_dict(self, tool):
+    @staticmethod
+    def checktool_to_dict(tool):
         d = collections.OrderedDict()
 
         d['failfast'] = bool(tool.failfast)
@@ -598,7 +604,8 @@ class ConfigParser(configparser.ConfigParser):
 
         return d
 
-    def fixtool_to_dict(self, tool):
+    @staticmethod
+    def fixtool_to_dict(tool):
         d = collections.OrderedDict()
 
         d['tabsize'] = int(tool.tabsize)
@@ -610,7 +617,8 @@ class ConfigParser(configparser.ConfigParser):
 
         return d
 
-    def update_copyright_tool_to_dict(self, tool):
+    @staticmethod
+    def update_copyright_tool_to_dict(tool):
         d = collections.OrderedDict()
 
         if tool.copyright_template_path:
@@ -836,7 +844,8 @@ def get_check_parser(parser=None):
 
     if parser is None:
         parser = argparse.ArgumentParser(description=CheckTool.__doc__)
-    elif isinstance(parser, argparse.Action):
+    elif hasattr(parser, 'add_parser'):
+        # SubParsersAction
         parser = parser.add_parser(
             'check',
             description=CheckTool.__doc__,
@@ -892,7 +901,8 @@ def get_fix_parser(parser=None):
 
     if parser is None:
         parser = argparse.ArgumentParser(description=FixTool.__doc__)
-    elif isinstance(parser, argparse.Action):
+    elif hasattr(parser, 'add_parser'):
+        # SubParsersAction
         parser = parser.add_parser(
             'fix',
             description=FixTool.__doc__,
@@ -925,7 +935,8 @@ def get_update_copyright_parser(parser=None):
 
     if parser is None:
         parser = argparse.ArgumentParser(description=CopyrightTool.__doc__)
-    elif isinstance(parser, argparse.Action):
+    elif hasattr(parser, 'add_parser'):
+        # SubParsersAction
         parser = parser.add_parser(
             'update-copyright',
             description=CopyrightTool.__doc__,
@@ -971,7 +982,8 @@ def get_dumpcfg_parser(parser=None):
 
     if parser is None:
         parser = argparse.ArgumentParser(description=description)
-    elif isinstance(parser, argparse.Action):
+    elif hasattr(parser, 'add_parser'):
+        # SubParsersAction
         parser = parser.add_parser(
             'dumpcfg',
             description=description,
@@ -1075,7 +1087,7 @@ def main():
                 scancfg.skip_data_patterns)
 
         if getattr(args, 'skip_path_patterns', None) is not None:
-            if args.skip_path_patterns == []:
+            if not args.skip_path_patterns:
                 skip_path_patterns = []
             else:
                 skip_path_patterns = args.skip_path_patterns.split(',')

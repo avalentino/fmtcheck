@@ -4,7 +4,8 @@ Release History
 1.4.0 (in development)
 ----------------------
 
-* Improved docstrings and descriptions
+* Improved docstrings and descriptions.
+* Fix linter warnings.
 
 
 1.3.0 (16/12/2017)
