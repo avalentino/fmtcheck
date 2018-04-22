@@ -81,7 +81,8 @@ source code:
 * code lines not longer than the maximum specified value,
 * the presence of an End Of Line (EOL) character before the End Of File (EOF),
 * the presence of a copyright statement is source files,
-* the file permissions (source files shall not be executables).
+* the file permissions (source files shall not be executables), and
+* the formatting is in line with the clang-format standards.
 
 The `check` sub-command has the following options::
 
@@ -90,6 +91,7 @@ The `check` sub-command has the following options::
     usage: fmtcheck check [-h] [--no-tabs] [--no-eol] [--no-trailing]
                           [--no-encoding] [--no-eof] [--no-relative-include]
                           [--no-copyright] [--no-mode]
+                          [--clang-format [CLANG-FORMAT EXECUTABLE]]
                           [-l MAXLINELEN] [-f] [-q] [-v] [-d]
                           [--patterns PATH_PATTERNS]
                           [--skip SKIP_PATH_PATTERNS] [--no-skip] [-c CONFIG]
@@ -128,6 +130,12 @@ The `check` sub-command has the following options::
                             line is source files (default: False)
       --no-mode             disable checks on file mode bits i.e. permissions
                             (default: False)
+      --clang-format [CLANG-FORMAT EXECUTABLE]
+                            checks formatting with clang-format
+                            (default: not check).
+                            The path to the "clang-format" executable can
+                            be optionally secified. Please remember to use
+                            the "--" separator before positional arguments.
       -l MAXLINELEN, --line-length MAXLINELEN
                             set the maximum line length, if not set (default)
                             disable checks on line length
@@ -179,8 +187,9 @@ source code:
 * trailing spaces removal,
 * substitution of tabs with spaces,
 * ensuring that an End Of Line (EOL) character is always present before
-  the End Of File (EOF), and
-* file permissions (source files shall not be executables).
+  the End Of File (EOF),
+* file permissions (source files shall not be executables), and
+* reformat according to clang-format standards.
 
 The `fix` sub-command has the following options::
 
@@ -188,6 +197,7 @@ The `fix` sub-command has the following options::
     
     usage: fmtcheck fix [-h] [--eol {NATIVE,UNIX,WIN}] [--tabsize TABSIZE]
                         [--no-trailing] [--no-eof] [--no-mode]
+                        [--clang-format [CLANG-FORMAT EXECUTABLE]]
                         [-b] [-q] [-v] [-d]
                         [--patterns PATH_PATTERNS] [--skip SKIP_PATH_PATTERNS]
                         [--no-skip] [-c CONFIG]
@@ -197,7 +207,7 @@ The `fix` sub-command has the following options::
     consistency, trailing spaces removal, substitution of tabs with spaces,
     ensuring that an End Of Line (EOL) character is always present before the
     End Of File (EOF), file permissions (source files shall not be
-    executables).
+    executables), reformat according to clang-format standards.
 
     positional arguments:
       PATH                  root of the source tree to scan (default: None)
@@ -215,6 +225,12 @@ The `fix` sub-command has the following options::
                             file (default: False)
       --no-mode             do not fix file mode bits i.e. permissions (default:
                             False)
+      --clang-format [CLANG-FORMAT EXECUTABLE]
+                            fix formatting using clang-format
+                            (default: disabled).
+                            The path to the "clang-format" executable can be
+                            optionally secified. Please remember to use
+                            the "--" separator before positional arguments.
 
     backup:
       -b, --backup          backup original file contents on a file with the

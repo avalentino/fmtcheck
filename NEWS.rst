@@ -5,6 +5,9 @@ Release History
 ----------------------
 
 * New check/fix for file permissions (source files shall not be executable).
+* New option for checking/fixing file formatting using the
+  :program:`clang-format` tool (if available).
+  See also https://clang.llvm.org/docs/ClangFormat.html.
 * Improved docstrings and descriptions.
 * Fix linter warnings.
 * Fixed a bug in the :meth:`CopyrightTool.update_copyright` method

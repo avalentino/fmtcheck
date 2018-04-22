@@ -23,6 +23,7 @@ import fnmatch
 import logging
 import argparse
 import datetime
+import subprocess
 import collections
 import configparser
 
@@ -40,6 +41,8 @@ __version__ = '1.4.0.dev0'
 
 
 PROG = 'fmtcheck'
+
+DEFAULT_CLANG_FORMAT = 'clang-format'
 
 
 class Eol(enum.Enum):
@@ -214,7 +217,8 @@ class CheckTool(object):
     maximum line length, presence of an End Of Line (EOL) character
     before the End Of File (EOF),
     presence of a copyright statement is source files,
-    file permissions (source files shall not be executables).
+    file permissions (source files shall not be executables),
+    formatting according clang-format standards.
 
     By default the tool prints how many files fail the check,
     for each of the selected checks.
@@ -226,6 +230,9 @@ class CheckTool(object):
     RELATIVE_INCLUDE_RE = re.compile(
         b'^[ \t]*#include[ \t]"\.\.', re.MULTILINE)
     #   b'^[ \t]*#include[ \t]"\.{1,2}', re.MULTILINE)  # stricter check
+
+    CXX_PATH_RE = re.compile('|'.join(
+        fnmatch.translate(p) for p in ('*.[ch]', '*.[ch]pp', '*.[ch]xx',)))
 
     def __init__(self, failfast=False, scancfg=DEFAULT_CFG, **kwargs):
         self.failfast = failfast
@@ -241,6 +248,7 @@ class CheckTool(object):
         self.check_copyright = bool(kwargs.pop('check_copyright', True))
         self.check_mode = bool(kwargs.pop('check_mode', True))
 
+        self.clang_format = kwargs.pop('clang_format', None)
         self.maxlinelen = int(kwargs.pop('maxlinelen', 0))
         self.eol = Eol(kwargs.pop('eol', Eol.NATIVE))
         self.encoding = kwargs.pop('encoding', 'ascii')
@@ -292,6 +300,44 @@ class CheckTool(object):
     def _mode_checker(direntry):
         mode = direntry.stat().st_mode
         if _isexecutable(mode):
+            return True
+
+    def _clang_format_checker(self, direntry, data):
+        # assert(self.CXX_PATH_RE.match(direntry.name))
+
+        cmd = [
+            self.clang_format,
+            '-assume-filename={}'.format(direntry.path),
+            '-style=file',
+        ]
+
+        completed_process = subprocess.run(cmd, stdout=subprocess.PIPE,
+                                           stderr=subprocess.PIPE, input=data)
+
+        if completed_process.returncode != os.EX_OK:
+            logging.error(
+                '{!r} called on {!r} exited with return code {}'.format(
+                    self.clang_format, direntry.path,
+                    completed_process.returncode))
+            return True
+
+        if completed_process.stdout != data:
+            if logging.getLogger().level <= logging.DEBUG:
+                # format diff
+
+                import difflib
+                original = data.decode('utf-8')
+                reformatted = completed_process.stdout.decode('utf-8')
+
+                diff = ''.join(difflib.unified_diff(
+                    original.splitlines(keepends=True),
+                    reformatted.splitlines(keepends=True),
+                    fromfile=direntry.name,
+                    tofile='reformatted ' + direntry.name))
+
+                logging.info('clang format diff for %s\n\n%s',
+                             direntry.path, diff)
+
             return True
 
     def _get_checklist(self):
@@ -356,6 +402,14 @@ class CheckTool(object):
             if self.failfast:
                 return stats
 
+        if self.clang_format and self.CXX_PATH_RE.match(direntry.name):
+            if self._clang_format_checker(direntry, data):
+                key = 'clang-format'
+                stats[key] += 1
+                logging.info('{}: {}'.format(filename, key))
+                if self.failfast:
+                    return stats
+
         return stats
 
     def check_file(self, filename):
@@ -400,14 +454,16 @@ class FixTool(object):
     trailing spaces removal, substitution of tabs with spaces,
     ensuring that an End Of Line (EOL) character is always present
     before the End Of File (EOF),
-    file permissions (source files shall not be executables).
+    file permissions (source files shall not be executables),
+    reformat according to clang-format standards.
 
     """
 
     TRIM_RE = re.compile('[ \t]+(?=\n)|[ \t]+$')
+    CXX_PATH_RE = CheckTool.CXX_PATH_RE
 
     def __init__(self, tabsize=4, fix_trailing=True, fix_eof=True,
-                 fix_mode=True, eol=Eol.NATIVE,
+                 fix_mode=True, clang_format=False, eol=Eol.NATIVE,
                  backup_ext=None, scancfg=DEFAULT_CFG):
         self.tabsize = int(tabsize)
         self.eol = Eol(eol)
@@ -415,6 +471,7 @@ class FixTool(object):
         self.fix_eof = fix_eof
         self.fix_mode = fix_mode
 
+        self.clang_format = clang_format
         self.backup_ext = backup_ext
 
         self.scancfg = scancfg
@@ -448,6 +505,24 @@ class FixTool(object):
             mode = xor(mode, stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
             os.chmod(direntry.path, mode)
 
+    def _clang_format_fixer(self, direntry, data):
+        # assert(self.CXX_PATH_RE.match(direntry.name))
+
+        cmd = [
+            self.clang_format,
+            '-assume-filename={}'.format(direntry.path),
+            '-style=file',
+        ]
+
+        # NOTE: The encoding argument is new in Python 3.6
+        encoding = sys.getdefaultencoding()
+        completed_process = subprocess.run(cmd, stdout=subprocess.PIPE,
+                                           stderr=subprocess.PIPE,
+                                           input=data.encode(encoding),
+                                           check=True)
+
+        return completed_process.stdout.decode(encoding)
+
     def _fix_file_core(self, direntry, data):
         filename = direntry.path
 
@@ -456,12 +531,20 @@ class FixTool(object):
         if self.fix_eof:
             data = self._eof_fixer(data)
 
-        fd = io.StringIO(data)
-        with open(filename, 'w', newline=str(self.eol.value)) as out:
-            for line in fd:
-                for line_fixer in self._line_fixers:
-                    line = line_fixer(line)
-                out.write(line)
+        istream = io.StringIO(data)
+        ostream = io.StringIO()
+        for line in istream:
+            for line_fixer in self._line_fixers:
+                line = line_fixer(line)
+            ostream.write(line)
+
+        data = ostream.getvalue()
+
+        if self.clang_format and self.CXX_PATH_RE.match(direntry.name):
+            data = self._clang_format_fixer(direntry, data)
+
+        with open(filename, 'w', newline=str(self.eol.value)) as fd:
+            fd.write(data)
 
         if self.fix_mode:
             self._mode_fixer(direntry)
@@ -650,6 +733,7 @@ class ConfigParser(configparser.ConfigParser):
         d['check_relative_include'] = bool(tool.check_relative_include)
         d['check_copyright'] = bool(tool.check_copyright)
         d['check_mode'] = bool(tool.check_mode)
+        d['clang_format'] = tool.clang_format
         d['maxlinelen'] = int(tool.maxlinelen)
         d['eol'] = tool.eol.name
         d['encoding'] = tool.encoding
@@ -666,6 +750,7 @@ class ConfigParser(configparser.ConfigParser):
         d['fix_eof'] = bool(tool.fix_eof)
         d['fix_mode'] = bool(tool.fix_mode)
 
+        d['clang_format'] = tool.clang_format
         d['backup'] = bool(tool.backup_ext is not None)
 
         return d
@@ -747,6 +832,12 @@ class ConfigParser(configparser.ConfigParser):
             if key in section:
                 d[key] = self.getboolean(sectname, key)
 
+        if 'clang_format' in section:
+            try:
+                d['clang_format'] = self.getboolean(sectname, 'clang_format')
+            except ValueError:
+                d['clang_format'] = self.get(sectname, 'clang_format')
+
         if 'maxlinelen' in section:
             d['maxlinelen'] = self.getint(sectname, 'maxlinelen')
 
@@ -783,6 +874,9 @@ class ConfigParser(configparser.ConfigParser):
 
         if 'fix_mode' in section:
             d['fix_mode'] = self.getboolean(sectname, 'fix_mode')
+
+        if 'clang_format' in section:
+            d['clang_format'] = self.get(sectname, 'clang_format')
 
         if self.getboolean(sectname, 'backup', fallback=None):
             d['backup_ext'] = '.bak'
@@ -943,6 +1037,13 @@ def get_check_parser(parser=None):
         (default: False)''')
 
     parser.add_argument(
+        '--clang-format', nargs='?', const=DEFAULT_CLANG_FORMAT,
+        metavar='CLANG-FORMAT EXECUTABLE',
+        help='''checks formatting with clang-format (default: not check). The
+        path to the "clang-format" executable can be optionally secified.
+        Please remember to use the "--" separator before positional arguments.
+        ''')
+    parser.add_argument(
         '-l', '--line-length', dest='maxlinelen', type=int, default=0,
         help='''set the maximum line length, if not set (default) disable
         checks on line length''')
@@ -987,6 +1088,13 @@ def get_fix_parser(parser=None):
         '--no-mode', action='store_false', dest='fix_mode',
         default=True, help='''do not fix file mode bits i.e. permissions
         (default: False)''')
+    parser.add_argument(
+        '--clang-format', nargs='?', const=DEFAULT_CLANG_FORMAT,
+        metavar='CLANG-FORMAT EXECUTABLE',
+        help='''fix formatting using clang-format (default: disabled). The
+        path to the "clang-format" executable can be optionally secified.
+        Please remember to use the "--" separator before positional arguments.
+        ''')
 
     parser = _set_common_perser_args(parser, backup=True)
 
@@ -1171,6 +1279,17 @@ def main():
             'SKIP_DATA_PATTERNS: {}'.format(
                 ', '.join(repr(p) for p in scancfg.skip_data_patterns)))
 
+        if args.clang_format:
+            clang_format = args.clang_format
+            if clang_format is True:
+                clang_format = DEFAULT_CLANG_FORMAT
+
+            completed_process = subprocess.run(
+                [clang_format, '--version'], check=True,
+                stdout=subprocess.PIPE)
+            logging.debug(
+                completed_process.stdout.decode(sys.getdefaultencoding()))
+
         if args.command == 'check':
             tool = CheckTool(
                 check_tabs=args.check_tabs,
@@ -1181,6 +1300,7 @@ def main():
                 check_relative_include=args.check_relative_include,
                 check_copyright=args.check_copyright,
                 check_mode=args.check_mode,
+                clang_format=args.clang_format,
                 maxlinelen=args.maxlinelen,
                 failfast=args.failfast,
                 scancfg=scancfg,
@@ -1205,6 +1325,7 @@ def main():
                 fix_trailing=args.fix_trailing,
                 fix_eof=args.fix_eof,
                 fix_mode=args.fix_mode,
+                clang_format=args.clang_format,
                 eol=args.eol,
                 backup_ext=args.backup,
                 scancfg=scancfg,
