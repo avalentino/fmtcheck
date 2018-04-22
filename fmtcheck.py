@@ -248,7 +248,7 @@ class CheckTool(object):
         self.check_copyright = bool(kwargs.pop('check_copyright', True))
         self.check_mode = bool(kwargs.pop('check_mode', True))
 
-        self.clang_format = kwargs.pop('clang_format', None)
+        self.clang_format = kwargs.pop('clang_format', False)
         self.maxlinelen = int(kwargs.pop('maxlinelen', 0))
         self.eol = Eol(kwargs.pop('eol', Eol.NATIVE))
         self.encoding = kwargs.pop('encoding', 'ascii')
@@ -1279,7 +1279,7 @@ def main():
             'SKIP_DATA_PATTERNS: {}'.format(
                 ', '.join(repr(p) for p in scancfg.skip_data_patterns)))
 
-        if args.clang_format:
+        if getattr(args, 'clang_format', None):
             clang_format = args.clang_format
             if clang_format is True:
                 clang_format = DEFAULT_CLANG_FORMAT
