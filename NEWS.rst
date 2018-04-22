@@ -8,6 +8,9 @@ Release History
 * Fix linter warnings.
 * Fixed a bug in the :meth:`CopyrightTool.update_copyright` method
   that caused infinite recursive calls.
+* The :class:`SrcTree` iterator now returns directory entries instead
+  of file names.
+
 
 1.3.0 (16/12/2017)
 ------------------

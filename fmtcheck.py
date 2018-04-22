@@ -81,8 +81,14 @@ class FakeDirEntry(object):
     def path(self):
         return self._path
 
+    def is_file(self):
+        return os.path.isfile(self._path)
+
     def is_dir(self):
         return os.path.isdir(self._path)
+
+    def stat(self):
+        return os.stat(self._path)
 
 
 class SrcTree(object):
@@ -186,7 +192,7 @@ class SrcTree(object):
                     if self._skip_data_re.search(data):
                         logging.debug('skipping %r', entry.path)
                     else:
-                        yield entry.path, data
+                        yield entry, data
 
             else:
                 logging.debug('skipping %r', entry.path)
@@ -314,7 +320,9 @@ class CheckTool(object):
 
         return checklist
 
-    def _check_file_core(self, filename, data):
+    def _check_file_core(self, direntry, data):
+        filename = direntry.path
+
         logging.debug('checking %r', filename)
 
         stats = collections.Counter()
@@ -337,7 +345,7 @@ class CheckTool(object):
         with open(filename, 'rb') as fd:
             data = fd.read()
 
-        return self._check_file_core(filename, data)
+        return self._check_file_core(FakeDirEntry(filename), data)
 
     def scan(self, path='.'):
         """Perform checks on all source files in path."""
@@ -353,8 +361,8 @@ class CheckTool(object):
             skip_path_patterns=self.scancfg.skip_path_patterns,
             skip_data_patterns=self.scancfg.skip_data_patterns)
 
-        for filename, data in srctree:
-            local_stats = self._check_file_core(filename, data)
+        for direntry, data in srctree:
+            local_stats = self._check_file_core(direntry, data)
             stats.update(local_stats)
 
             if self.failfast and stats:
@@ -408,7 +416,9 @@ class FixTool(object):
     def _eof_fixer(data):
         return data.rstrip() + '\n'
 
-    def _fix_file_core(self, filename, data):
+    def _fix_file_core(self, direntry, data):
+        filename = direntry.path
+
         logging.debug('fixing %r', filename)
 
         if self.fix_eof:
@@ -437,7 +447,7 @@ class FixTool(object):
                 backupfile = filename + self.backup_ext
                 shutil.move(filename, backupfile)
 
-        self._fix_file_core(outfile, data)
+        self._fix_file_core(FakeDirEntry(outfile), data)
 
     def scan(self, path='.'):
         """Apply fixes to all source files in path."""
@@ -451,12 +461,14 @@ class FixTool(object):
             skip_path_patterns=self.scancfg.skip_path_patterns,
             skip_data_patterns=self.scancfg.skip_data_patterns)
 
-        for filename, data in srctree:
+        for direntry, data in srctree:
+            filename = direntry.path
+
             if self.backup_ext:
                 backupfile = filename + self.backup_ext
                 shutil.move(filename, backupfile)
 
-            self._fix_file_core(filename, data)
+            self._fix_file_core(direntry, data)
 
 
 class CopyrightTool(object):
@@ -506,7 +518,9 @@ class CopyrightTool(object):
         else:
             self._copyright_template_str = None
 
-    def _update_copyright_core(self, filename, data):
+    def _update_copyright_core(self, direntry, data):
+        filename = direntry.path
+
         logging.debug('updating %r', filename)
 
         if self.update:
@@ -535,7 +549,7 @@ class CopyrightTool(object):
                 backupfile = filename + self.backup_ext
                 shutil.move(filename, backupfile)
 
-        self._update_copyright_core(outfile, data)
+        self._update_copyright_core(FakeDirEntry(outfile), data)
 
     def scan(self, path='.'):
         """Update the copyright in all source files in path."""
@@ -552,12 +566,14 @@ class CopyrightTool(object):
             skip_path_patterns=self.scancfg.skip_path_patterns,
             skip_data_patterns=self.scancfg.skip_data_patterns)
 
-        for filename, data in srctree:
+        for direntry, data in srctree:
+            filename = direntry.path
+
             if self.backup_ext:
                 backupfile = filename + self.backup_ext
                 shutil.move(filename, backupfile)
 
-            self._update_copyright_core(filename, data)
+            self._update_copyright_core(direntry, data)
 
 
 class ConfigParser(configparser.ConfigParser):
