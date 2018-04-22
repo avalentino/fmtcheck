@@ -17,6 +17,7 @@ import re
 import sys
 import copy
 import enum
+import stat
 import shutil
 import fnmatch
 import logging
@@ -24,6 +25,8 @@ import argparse
 import datetime
 import collections
 import configparser
+
+from operator import xor
 
 try:
     import argcomplete
@@ -198,6 +201,10 @@ class SrcTree(object):
                 logging.debug('skipping %r', entry.path)
 
 
+def _isexecutable(mode):
+    return mode & (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+
+
 class CheckTool(object):
     """Check the conformity of source code to basic standards.
 
@@ -206,7 +213,8 @@ class CheckTool(object):
     presence of tabs, conformity to the ASCII encoding,
     maximum line length, presence of an End Of Line (EOL) character
     before the End Of File (EOF),
-    presence of a copyright statement is source files.
+    presence of a copyright statement is source files,
+    file permissions (source files shall not be executables).
 
     By default the tool prints how many files fail the check,
     for each of the selected checks.
@@ -231,6 +239,7 @@ class CheckTool(object):
         self.check_relative_include = bool(
             kwargs.pop('check_relative_include', True))
         self.check_copyright = bool(kwargs.pop('check_copyright', True))
+        self.check_mode = bool(kwargs.pop('check_mode', True))
 
         self.maxlinelen = int(kwargs.pop('maxlinelen', 0))
         self.eol = Eol(kwargs.pop('eol', Eol.NATIVE))
@@ -277,6 +286,12 @@ class CheckTool(object):
 
     def _copyright_checker(self, data):
         if not self.COPYRIGHT_RE.search(data):
+            return True
+
+    @staticmethod
+    def _mode_checker(direntry):
+        mode = direntry.stat().st_mode
+        if _isexecutable(mode):
             return True
 
     def _get_checklist(self):
@@ -334,6 +349,13 @@ class CheckTool(object):
                 if self.failfast:
                     return stats
 
+        if self.check_mode and self._mode_checker(direntry):
+            key = 'mode (executable bit)'
+            stats[key] += 1
+            logging.info('{}: {}'.format(filename, key))
+            if self.failfast:
+                return stats
+
         return stats
 
     def check_file(self, filename):
@@ -377,18 +399,21 @@ class FixTool(object):
     Available fixes include: end of line (EOL) consistency,
     trailing spaces removal, substitution of tabs with spaces,
     ensuring that an End Of Line (EOL) character is always present
-    before the End Of File (EOF).
+    before the End Of File (EOF),
+    file permissions (source files shall not be executables).
 
     """
 
     TRIM_RE = re.compile('[ \t]+(?=\n)|[ \t]+$')
 
     def __init__(self, tabsize=4, fix_trailing=True, fix_eof=True,
-                 eol=Eol.NATIVE, backup_ext=None, scancfg=DEFAULT_CFG):
+                 fix_mode=True, eol=Eol.NATIVE,
+                 backup_ext=None, scancfg=DEFAULT_CFG):
         self.tabsize = int(tabsize)
         self.eol = Eol(eol)
         self.fix_trailing = fix_trailing
         self.fix_eof = fix_eof
+        self.fix_mode = fix_mode
 
         self.backup_ext = backup_ext
 
@@ -416,6 +441,13 @@ class FixTool(object):
     def _eof_fixer(data):
         return data.rstrip() + '\n'
 
+    @staticmethod
+    def _mode_fixer(direntry):
+        mode = direntry.stat().st_mode
+        if _isexecutable(mode):
+            mode = xor(mode, stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+            os.chmod(direntry.path, mode)
+
     def _fix_file_core(self, direntry, data):
         filename = direntry.path
 
@@ -430,6 +462,9 @@ class FixTool(object):
                 for line_fixer in self._line_fixers:
                     line = line_fixer(line)
                 out.write(line)
+
+        if self.fix_mode:
+            self._mode_fixer(direntry)
 
     def fix_file(self, filename, outfile=None):
         """Apply specified fixes on the input data."""
@@ -614,6 +649,7 @@ class ConfigParser(configparser.ConfigParser):
         d['check_eol_at_eof'] = bool(tool.check_eol_at_eof)
         d['check_relative_include'] = bool(tool.check_relative_include)
         d['check_copyright'] = bool(tool.check_copyright)
+        d['check_mode'] = bool(tool.check_mode)
         d['maxlinelen'] = int(tool.maxlinelen)
         d['eol'] = tool.eol.name
         d['encoding'] = tool.encoding
@@ -628,6 +664,7 @@ class ConfigParser(configparser.ConfigParser):
         d['eol'] = Eol(tool.eol).name
         d['fix_trailing'] = bool(tool.fix_trailing)
         d['fix_eof'] = bool(tool.fix_eof)
+        d['fix_mode'] = bool(tool.fix_mode)
 
         d['backup'] = bool(tool.backup_ext is not None)
 
@@ -706,7 +743,7 @@ class ConfigParser(configparser.ConfigParser):
 
         for key in ('failfast', 'check_tabs', 'check_eol', 'check_trailing',
                     'check_encoding', 'check_eol_at_eof',
-                    'check_relative_include', 'check_copyright'):
+                    'check_relative_include', 'check_copyright', 'check_mode'):
             if key in section:
                 d[key] = self.getboolean(sectname, key)
 
@@ -743,6 +780,9 @@ class ConfigParser(configparser.ConfigParser):
 
         if 'fix_trailing' in section:
             d['fix_trailing'] = self.getboolean(sectname, 'fix_trailing')
+
+        if 'fix_mode' in section:
+            d['fix_mode'] = self.getboolean(sectname, 'fix_mode')
 
         if self.getboolean(sectname, 'backup', fallback=None):
             d['backup_ext'] = '.bak'
@@ -897,6 +937,10 @@ def get_check_parser(parser=None):
         '--no-copyright', action='store_false', dest='check_copyright',
         default=True, help='''disable checks on the presence of the
         copyright line is source files (default: False)''')
+    parser.add_argument(
+        '--no-mode', action='store_false', dest='check_mode',
+        default=True, help='''disable checks on file mode bits i.e. permissions
+        (default: False)''')
 
     parser.add_argument(
         '-l', '--line-length', dest='maxlinelen', type=int, default=0,
@@ -939,6 +983,10 @@ def get_fix_parser(parser=None):
         '--no-eof', action='store_false', dest='fix_eof',
         default=True, help='''do not fix missing EOL characters at the end
         of the file (default: False)''')
+    parser.add_argument(
+        '--no-mode', action='store_false', dest='fix_mode',
+        default=True, help='''do not fix file mode bits i.e. permissions
+        (default: False)''')
 
     parser = _set_common_perser_args(parser, backup=True)
 
@@ -1132,6 +1180,7 @@ def main():
                 check_eol_at_eof=args.check_eol_at_eof,
                 check_relative_include=args.check_relative_include,
                 check_copyright=args.check_copyright,
+                check_mode=args.check_mode,
                 maxlinelen=args.maxlinelen,
                 failfast=args.failfast,
                 scancfg=scancfg,
@@ -1155,6 +1204,7 @@ def main():
                 tabsize=args.tabsize,
                 fix_trailing=args.fix_trailing,
                 fix_eof=args.fix_eof,
+                fix_mode=args.fix_mode,
                 eol=args.eol,
                 backup_ext=args.backup,
                 scancfg=scancfg,

@@ -4,6 +4,7 @@ Release History
 1.4.0 (in development)
 ----------------------
 
+* New check/fix for file permissions (source files shall not be executable).
 * Improved docstrings and descriptions.
 * Fix linter warnings.
 * Fixed a bug in the :meth:`CopyrightTool.update_copyright` method

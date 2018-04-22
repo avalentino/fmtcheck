@@ -80,14 +80,16 @@ source code:
 * conformity to the ASCII encoding,
 * code lines not longer than the maximum specified value,
 * the presence of an End Of Line (EOL) character before the End Of File (EOF),
-* the presence of a copyright statement is source files.
+* the presence of a copyright statement is source files,
+* the file permissions (source files shall not be executables).
 
 The `check` sub-command has the following options::
 
     $ fmtcheck check -h
 
     usage: fmtcheck check [-h] [--no-tabs] [--no-eol] [--no-trailing]
-                          [--no-encoding] [--no-eof] [--no-copyright]
+                          [--no-encoding] [--no-eof] [--no-relative-include]
+                          [--no-copyright] [--no-mode]
                           [-l MAXLINELEN] [-f] [-q] [-v] [-d]
                           [--patterns PATH_PATTERNS]
                           [--skip SKIP_PATH_PATTERNS] [--no-skip] [-c CONFIG]
@@ -98,7 +100,8 @@ The `check` sub-command has the following options::
     the end of a source code line, presence of tabs, conformity to the ASCII
     encoding, maximum line length, presence of an End Of Line (EOL) character
     before the End Of File (EOF), presence of a copyright statement is source
-    files.
+    files, file permissions (source files shall not be executables),
+    formatting according clang-format standards.
     By default the tool prints how many files fail the check, for each of
     the selected checks.
 
@@ -118,8 +121,13 @@ The `check` sub-command has the following options::
                             (default: False)
       --no-eof              disable checks on the presence of an EOL character
                             at the end of the file (default: False)
+      --no-relative-include
+                            disable checks on the presence of C/C++ "#include"
+                            statements with relative path (default: False)
       --no-copyright        disable checks on the presence of the copyright
                             line is source files (default: False)
+      --no-mode             disable checks on file mode bits i.e. permissions
+                            (default: False)
       -l MAXLINELEN, --line-length MAXLINELEN
                             set the maximum line length, if not set (default)
                             disable checks on line length
@@ -169,16 +177,18 @@ source code:
 
 * end of line (EOL) consistency,
 * trailing spaces removal,
-* substitution of tabs with spaces, and
+* substitution of tabs with spaces,
 * ensuring that an End Of Line (EOL) character is always present before
-  the End Of File (EOF).
+  the End Of File (EOF), and
+* file permissions (source files shall not be executables).
 
 The `fix` sub-command has the following options::
 
     $ fmtcheck fix -h
     
     usage: fmtcheck fix [-h] [--eol {NATIVE,UNIX,WIN}] [--tabsize TABSIZE]
-                        [--no-trailing] [--no-eof] [-b] [-q] [-v] [-d]
+                        [--no-trailing] [--no-eof] [--no-mode]
+                        [-b] [-q] [-v] [-d]
                         [--patterns PATH_PATTERNS] [--skip SKIP_PATH_PATTERNS]
                         [--no-skip] [-c CONFIG]
                         PATH [PATH ...]
@@ -186,7 +196,8 @@ The `fix` sub-command has the following options::
     Fix basic formatting issues. Available fixes include: end of line (EOL)
     consistency, trailing spaces removal, substitution of tabs with spaces,
     ensuring that an End Of Line (EOL) character is always present before the
-    End Of FIle (EOF).
+    End Of File (EOF), file permissions (source files shall not be
+    executables).
 
     positional arguments:
       PATH                  root of the source tree to scan (default: None)
@@ -202,6 +213,8 @@ The `fix` sub-command has the following options::
                             end of line (default: False)
       --no-eof              do not fix missing EOL characters at the end of the
                             file (default: False)
+      --no-mode             do not fix file mode bits i.e. permissions (default:
+                            False)
 
     backup:
       -b, --backup          backup original file contents on a file with the
@@ -272,7 +285,7 @@ The `update-copyright` sub-command has the following options::
       --no-update           disable the update of the date in existing
                             copyright lines (default: False)
       -y YEAR, --year YEAR  specify the last year covered by the copyright
-                            (default: 2017)
+                            (default: 2018)
 
     backup:
       -b, --backup          backup original file contents on a file with the
@@ -307,14 +320,15 @@ The `dumpcfg` sub-command has the following options::
 
     $ fmtcheck dumpcfg -h
     
-    usage: fmtcheck dumpcfg [-h]
+    usage: fmtcheck dumpcfg [-h] [-d]
 
     Dump to screen the default configuration (in .INI format). The dumped
     configuration can be used to write a custom configuration file and avoid
     to pass options via command line.
 
     optional arguments:
-      -h, --help  show this help message and exit
+      -h, --help   show this help message and exit
+      -d, --debug  enable debug output
 
 
 Example::
