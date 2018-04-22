@@ -6,15 +6,16 @@ Release History
 
 * New check/fix for file permissions (source files shall not be executable).
 * New option for checking/fixing file formatting using the
-  :program:`clang-format` tool (if available).
-  See also https://clang.llvm.org/docs/ClangFormat.html.
+  `clang-format`_ tool (if available).
 * Improved docstrings and descriptions.
 * Update copyright statement date.
 * Fix linter warnings.
-* Fixed a bug in the :meth:`CopyrightTool.update_copyright` method
+* Fixed a bug in the `CopyrightTool.update_copyright` method
   that caused infinite recursive calls.
-* The :class:`SrcTree` iterator now returns directory entries instead
+* The `SrcTree` iterator now returns directory entries instead
   of file names.
+
+.. _clang-format: https://clang.llvm.org/docs/ClangFormat.html
 
 
 1.3.0 (16/12/2017)
