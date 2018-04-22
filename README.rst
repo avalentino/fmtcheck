@@ -351,6 +351,9 @@ Example::
 
     $ fmtcheck dumpcfg
     
+    [logging]
+    loglevel = WARNING
+
     [path_patterns]
     pattern_01 = *.[ch]
     pattern_02 = *.[ch]pp
@@ -372,6 +375,11 @@ Example::
     check_eol = True
     check_trailing = True
     check_encoding = True
+    check_eol_at_eof = True
+    check_relative_include = True
+    check_copyright = True
+    check_mode = True
+    clang_format = False
     maxlinelen = 0
     eol = NATIVE
     encoding = ascii
@@ -380,9 +388,15 @@ Example::
     tabsize = 4
     eol = NATIVE
     fix_trailing = True
+    fix_eof = True
+    fix_mode = True
+    clang_format = False
+    backup = False
 
-    [logging]
-    loglevel = WARNING
+    [update-copyright]
+    update = True
+    year = 2018
+    backup = False
 
 
 License
