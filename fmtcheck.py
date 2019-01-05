@@ -30,17 +30,24 @@ import configparser
 from operator import xor
 
 try:
+    from os import EX_OK
+except ImportError:
+    EX_OK = 0
+EX_FAILURE = -1
+
+
+try:
     import argcomplete
 except ImportError:
-    argcomplete = None
+    argcomplete = False
 else:
     PYTHON_ARGCOMPLETE_OK = True
 
 
 __version__ = '1.4.0b1'
-
-
 PROG = 'fmtcheck'
+
+LOGFMT = '%(levelname)s: %(message)s'
 
 DEFAULT_CLANG_FORMAT = 'clang-format'
 
@@ -1170,17 +1177,16 @@ def get_dumpcfg_parser(parser=None):
 
 
 def get_parser():
-    """Build and return the command line parser."""
+    """Instantiate the command line argument parser."""
 
     parser = argparse.ArgumentParser(
-        prog=PROG, epilog='Copyright (C) 2017-2018 Antonio Valentino',
-        description=__doc__)
+        description=__doc__, prog=PROG,
+        epilog='Copyright (C) 2017-2018 Antonio Valentino')
 
     parser.add_argument(
-        '--version', action='version',
-        version='%(prog)s {}'.format(__version__))
+        '--version', action='version', version='%(prog)s v' + __version__)
 
-    subparsers = parser.add_subparsers(dest='command', description='')
+    subparsers = parser.add_subparsers(dest='command', title='sub-commands')
 
     get_check_parser(subparsers)
     get_fix_parser(subparsers)
@@ -1224,14 +1230,15 @@ def parse_args(args=None, namespace=None, parser=None):
     return args
 
 
-def main():
-    """Main program."""
+def main(argv=None):
+    """Main CLI interface."""
 
-    logging.basicConfig(
-        format='%(levelname)s: %(message)s', stream=sys.stdout)
+    logging.basicConfig(format=LOGFMT, level=logging.INFO, stream=sys.stdout)
+    logging.captureWarnings(True)
 
-    args = parse_args()
+    args = parse_args(argv)
     logging.getLogger().setLevel(args.loglevel)
+    ret = EX_OK
 
     try:
         scancfg = DEFAULT_CFG
@@ -1350,9 +1357,15 @@ def main():
             print(out.getvalue())
         else:
             raise ValueError('invalid command: {!r}'.format(args.command))
-    except Exception as ex:
-        logging.critical(str(ex))
-        logging.debug('', exc_info=True)
+
+    except Exception as exc:
+        logging.critical(
+            'unexpected exception caught: {!r} {}'.format(
+                type(exc).__name__, exc))
+        logging.debug('stacktrace:', exc_info=True)
+        ret = EX_FAILURE
+
+    return ret
 
 
 if __name__ == '__main__':
