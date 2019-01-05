@@ -221,9 +221,11 @@ class SrcTree(object):
             if entry.is_dir():
                 subtree = copy.copy(self)
                 subtree.path = entry.path
-                yield from subtree
-                # for item in suntree:
-                #     yield item
+
+                # @COMPATBILITY: "yeild form" is new in Python 3.3
+                # yield from subtree
+                for item in subtree:
+                    yield item
             elif self._path_re.match(entry.name):
                 try:
                     with open(entry.path, str(self.mode.value)) as fd:
