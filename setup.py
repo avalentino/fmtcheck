@@ -53,4 +53,5 @@ setup(
             'fmtcheck=fmtcheck:main',
         ],
     },
+    python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*',
 )
