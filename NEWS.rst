@@ -14,6 +14,7 @@ Release History
   that caused infinite recursive calls.
 * The `SrcTree` iterator now returns directory entries instead
   of file names.
+* Basic unit tests added.
 
 .. _clang-format: https://clang.llvm.org/docs/ClangFormat.html
 
