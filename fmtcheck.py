@@ -46,9 +46,7 @@ else:
 
 __version__ = '1.4.0b1'
 PROG = 'fmtcheck'
-
 LOGFMT = '%(levelname)s: %(message)s'
-
 DEFAULT_CLANG_FORMAT = 'clang-format'
 
 
@@ -1318,7 +1316,7 @@ def main(argv=None):
             'SKIP_DATA_PATTERNS: {}'.format(
                 ', '.join(repr(p) for p in scancfg.skip_data_patterns)))
 
-        if getattr(args, 'clang_format', None):
+        if getattr(args, 'clang_format', None) not in (None, False, 'False'):
             clang_format = args.clang_format
             if clang_format is True:
                 clang_format = DEFAULT_CLANG_FORMAT
@@ -1328,6 +1326,8 @@ def main(argv=None):
                 stdout=subprocess.PIPE)
             logging.debug(
                 completed_process.stdout.decode(sys.getdefaultencoding()))
+        else:
+            clang_format = False
 
         if args.command == 'check':
             tool = CheckTool(
@@ -1339,7 +1339,7 @@ def main(argv=None):
                 check_relative_include=args.check_relative_include,
                 check_copyright=args.check_copyright,
                 check_mode=args.check_mode,
-                clang_format=args.clang_format,
+                clang_format=clang_format,
                 maxlinelen=args.maxlinelen,
                 failfast=args.failfast,
                 scancfg=scancfg,
@@ -1364,7 +1364,7 @@ def main(argv=None):
                 fix_trailing=args.fix_trailing,
                 fix_eof=args.fix_eof,
                 fix_mode=args.fix_mode,
-                clang_format=args.clang_format,
+                clang_format=clang_format,
                 eol=args.eol,
                 backup_ext=args.backup,
                 scancfg=scancfg,
