@@ -82,26 +82,56 @@ DEFAULT_CFG = ScanConfig(
 )
 
 
-class FakeDirEntry(object):
+class SimpleDirEntry(object):
+    """Instantiable class with the same interface of os.DirEntry."""
+
+    __slots__ = ['_path']
+
     def __init__(self, path):
         self._path = path
 
     @property
     def name(self):
+        """The entry's base path name."""
+
         return os.path.basename(self._path)
 
     @property
     def path(self):
+        """The entry's full path name."""
+
         return self._path
 
-    def is_file(self):
-        return os.path.isfile(self._path)
+    def inode(self):
+        """'Return inode of the entry."""
+
+        return os.stat(self._path).st_ino
 
     def is_dir(self):
+        """Return True if the entry is a directory."""
+
         return os.path.isdir(self._path)
 
+    def is_file(self):
+        """Return True if the entry is a file."""
+
+        return os.path.isfile(self._path)
+
+    def is_symlink(self):
+        """Return True if the entry is a symbolic link."""
+
+        return os.path.islink(self._path)
+
     def stat(self):
+        """Return stat_result object for the entry."""
+
         return os.stat(self._path)
+
+    def __fspath__(self):
+        return os.fspath(self._path)
+
+    def __repr__(self):
+        return '<{} {!r}>'.format(self.__class__.__name__, self.name)
 
 
 class SrcTree(object):
@@ -177,7 +207,7 @@ class SrcTree(object):
     @staticmethod
     def _scan(path):
         if os.path.isfile(path):
-            return [FakeDirEntry(path)]
+            return [SimpleDirEntry(path)]
         else:
             logging.debug('scanning %r', path)
             return os.scandir(path)
@@ -428,7 +458,7 @@ class CheckTool(object):
         with open(filename, 'rb') as fd:
             data = fd.read()
 
-        return self._check_file_core(FakeDirEntry(filename), data)
+        return self._check_file_core(SimpleDirEntry(filename), data)
 
     def scan(self, path='.'):
         """Perform checks on all source files in path."""
@@ -572,7 +602,7 @@ class FixTool(object):
                 backupfile = filename + self.backup_ext
                 shutil.move(filename, backupfile)
 
-        self._fix_file_core(FakeDirEntry(outfile), data)
+        self._fix_file_core(SimpleDirEntry(outfile), data)
 
     def scan(self, path='.'):
         """Apply fixes to all source files in path."""
@@ -674,7 +704,7 @@ class CopyrightTool(object):
                 backupfile = filename + self.backup_ext
                 shutil.move(filename, backupfile)
 
-        self._update_copyright_core(FakeDirEntry(outfile), data)
+        self._update_copyright_core(SimpleDirEntry(outfile), data)
 
     def scan(self, path='.'):
         """Update the copyright in all source files in path."""
