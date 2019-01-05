@@ -12,7 +12,7 @@ def get_version():
     with open(filename) as fd:
         data = fd.read()
     mobj = re.search(
-        '^__version__\s*=\s*(?P<quote>[\'"])(?P<version>[^\'"]+)(?P=quote)',
+        r'^__version__\s*=\s*(?P<quote>[\'"])(?P<version>[^\'"]+)(?P=quote)',
         data,
         re.MULTILINE)
     return mobj.group('version')
@@ -44,6 +44,7 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
     ],
     keywords='utility formatting checkers',
     py_modules=["fmtcheck"],
