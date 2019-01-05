@@ -265,10 +265,10 @@ class CheckTool(object):
     """
 
     COPYRIGHT_RE = re.compile(
-        b'(?P<copyright>[Cc]opyright([ \t]+(\([Cc]\)))?)[ \t]+\d{4}')
+        rb'(?P<copyright>[Cc]opyright([ \t]+(\([Cc]\)))?)[ \t]+\d{4}')
     RELATIVE_INCLUDE_RE = re.compile(
-        b'^[ \t]*#include[ \t]"\.\.', re.MULTILINE)
-    #   b'^[ \t]*#include[ \t]"\.{1,2}', re.MULTILINE)  # stricter check
+        rb'^[ \t]*#include[ \t]"\.\.', re.MULTILINE)
+    #   rb'^[ \t]*#include[ \t]"\.{1,2}', re.MULTILINE)  # stricter check
 
     CXX_PATH_RE = re.compile('|'.join(
         fnmatch.translate(p) for p in ('*.[ch]', '*.[ch]pp', '*.[ch]xx',)))
@@ -641,12 +641,12 @@ class CopyrightTool(object):
 
     CHECK_COPYRIGHT_RE = CheckTool.COPYRIGHT_RE.pattern.decode('utf-8')
     COPYRIGHT_RE_TEMPLATE = (
-        '(?P<copyright>:?[Cc]opyright:?([ \t]+(\([Cc]\)))?)'
-        '[ \t]+(?!%(year)d)'
-        '(?P<firstyear>\d{4})'
-        '((-|(,\d{4})*,)(?P<lastyear>\d{4})?)?'
+        r'(?P<copyright>:?[Cc]opyright:?([ \t]+(\([Cc]\)))?)'
+        r'[ \t]+(?!%(year)d)'
+        r'(?P<firstyear>\d{4})'
+        r'((-|(,\d{4})*,)(?P<lastyear>\d{4})?)?'
     )
-    REPL_COPYRIGHT_RE_TEMPLATE = '\g<copyright> \g<firstyear>-%(year)d'
+    REPL_COPYRIGHT_RE_TEMPLATE = r'\g<copyright> \g<firstyear>-%(year)d'
 
     def __init__(self, copyright_template_path=None, update=True, year=None,
                  backup_ext=None, scancfg=DEFAULT_CFG):
