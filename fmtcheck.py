@@ -1181,7 +1181,7 @@ def get_parser():
 
     parser = argparse.ArgumentParser(
         description=__doc__, prog=PROG,
-        epilog='Copyright (C) 2017-2018 Antonio Valentino')
+        epilog='Copyright (C) 2017-2019 Antonio Valentino')
 
     parser.add_argument(
         '--version', action='version', version='%(prog)s v' + __version__)

@@ -53,8 +53,7 @@ used to obtain a simple help message::
       -h, --help            show this help message and exit
       --version             show program's version number and exit
 
-    subcommands:
-
+    sub-commands:
       {check,fix,update-copyright,dumpcfg}
         check               Check the conformity of source code to basic
                             standards.
@@ -402,6 +401,6 @@ Example::
 License
 -------
 
-:copyright: 2017-2018 Antonio Valentino
+:copyright: 2017-2019 Antonio Valentino
 
 BSD 3-Clause License (see LICENSE file).
