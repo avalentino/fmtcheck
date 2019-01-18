@@ -25,7 +25,11 @@ import argparse
 import datetime
 import subprocess
 import collections
-import configparser
+
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
 
 from operator import xor
 
@@ -35,6 +39,10 @@ except ImportError:
     EX_OK = 0
 EX_FAILURE = -1
 
+if not hasattr(os, 'scandir'):
+    from scandir import _scandir
+    os.scandir = _scandir
+    del _scandir
 
 try:
     import argcomplete
@@ -246,6 +254,7 @@ def _isexecutable(mode):
 
 
 class CheckTool(object):
+
     """Check the conformity of source code to basic standards.
 
     Available checks include: end of line (EOL) consistency,
@@ -263,10 +272,10 @@ class CheckTool(object):
     """
 
     COPYRIGHT_RE = re.compile(
-        rb'(?P<copyright>[Cc]opyright([ \t]+(\([Cc]\)))?)[ \t]+\d{4}')
+        br'(?P<copyright>[Cc]opyright([ \t]+(\([Cc]\)))?)[ \t]+\d{4}')
     RELATIVE_INCLUDE_RE = re.compile(
-        rb'^[ \t]*#include[ \t]"\.\.', re.MULTILINE)
-    #   rb'^[ \t]*#include[ \t]"\.{1,2}', re.MULTILINE)  # stricter check
+        br'^[ \t]*#include[ \t]"\.\.', re.MULTILINE)
+    #   br'^[ \t]*#include[ \t]"\.{1,2}', re.MULTILINE)  # stricter check
 
     CXX_PATH_RE = re.compile('|'.join(
         fnmatch.translate(p) for p in ('*.[ch]', '*.[ch]pp', '*.[ch]xx',)))

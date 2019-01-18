@@ -18,6 +18,20 @@ def get_version():
     return mobj.group('version')
 
 
+install_requires = []
+
+if not hasattr(os, 'scandir'):
+    install_requires.append('scandir')
+
+
+try:
+    import enum
+except ImportError:
+    install_requires.append('enum34')
+else:
+    del enum
+
+
 setup(
     name='fmtcheck',
     version=get_version(),
@@ -48,6 +62,7 @@ setup(
     ],
     keywords='utility formatting checkers',
     py_modules=["fmtcheck"],
+    install_requires=install_requires,
     entry_points={
         'console_scripts': [
             'fmtcheck=fmtcheck:main',
