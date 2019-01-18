@@ -8,17 +8,16 @@ source tree to basic formatting standards, to "fix" common formatting
 mistakes, and also to set and update the copyright statement
 ("update-copyright" sub-command) in source files.
 
-Requirements:
-
-* for Python < 3.5 it is required the "standir" package
-  (https://pypi.org/project/scandir)
-* for Python < 3.4 it is required the "enum34" package
-  (https://pypi.org/project/enum34)
-* the "argcomplete" package is strongly recommended for all Python versions
-  (https://pypi.org/project/argcomplete)
-
 """
 
+# Requirements:
+#
+# * for Python < 3.5 it is required the "standir" package
+#   (https://pypi.org/project/scandir)
+# * for Python < 3.4 it is required the "enum34" package
+#   (https://pypi.org/project/enum34)
+# * the "argcomplete" package is strongly recommended for all Python versions
+#   (https://pypi.org/project/argcomplete)
 
 import io
 import os
