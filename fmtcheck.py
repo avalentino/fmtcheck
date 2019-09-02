@@ -12,7 +12,7 @@ mistakes, and also to set and update the copyright statement
 
 # Requirements:
 #
-# * for Python < 3.5 it is required the "standir" package
+# * for Python < 3.5 it is required the "scandir" package
 #   (https://pypi.org/project/scandir)
 # * for Python < 3.4 it is required the "enum34" package
 #   (https://pypi.org/project/enum34)
