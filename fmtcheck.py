@@ -320,7 +320,8 @@ class CheckTool(object):
         mobj = tab_re.search(data)
         if mobj is not None:
             lines = data[:mobj.end()].splitlines()
-            logging.info(
+            logging.log(
+                logging.getLevelName('VERBOSE'),
                 '%s:%d: %r -- tab character (first occurrence)',
                 self._current_filename, len(lines), lines[-1].decode('utf-8'))
         return mobj is not None
@@ -338,7 +339,8 @@ class CheckTool(object):
         mobj = invalid_eol_re.search(data)
         if mobj is not None:
             lines = data[:mobj.end()].splitlines()
-            logging.info(
+            logging.log(
+                logging.getLevelName('VERBOSE'),
                 '%s:%d: %r -- invalid EOL (first occurrence)',
                 self._current_filename, len(lines), lines[-1].decode('utf-8'))
         return mobj is not None
@@ -351,7 +353,8 @@ class CheckTool(object):
         mobj = trailing_spaces_re.search(data)
         if mobj is not None:
             lines = data[:mobj.end()].splitlines()
-            logging.info(
+            logging.log(
+                logging.getLevelName('VERBOSE'),
                 '%s:%d: %r -- trailing spaces (first occurrence)',
                 self._current_filename, len(lines), lines[-1].decode('utf-8'))
         return mobj is not None
@@ -361,8 +364,10 @@ class CheckTool(object):
             try:
                 line.decode(self.encoding)
             except UnicodeDecodeError:
-                logging.info(
-                    'unable to decode line n. {}: {!r}'.format(lineno, line))
+                logging.log(
+                    logging.getLevelName('VERBOSE'),
+                    '%s:%d: %r -- unable to decode',
+                    self._current_filename, lineno, line)
                 return True
 
     def _linelen_checker(self, data):
@@ -373,8 +378,11 @@ class CheckTool(object):
 
         for lineno, line in enumerate(line_iterator, 1):
             if len(line) > self.maxlinelen:
-                logging.info(
-                    'line %d is %d characters long', lineno, len(line))
+                logging.log(
+                    logging.getLevelName('VERBOSE'),
+                    '%s:%d: %r -- line too long (%d characters)',
+                    self._current_filename, lineno, line.decode('utf-8'),
+                    len(line))
                 return True
 
     @staticmethod
@@ -1039,6 +1047,7 @@ def _set_common_perser_args(parser, backup=False):
             Default no backup is performed.''')
 
     # --- logging ------------------------------------------------------------
+    assert isinstance(logging.getLevelName('VERBOSE'), int)
     log_group = parser.add_argument_group('logging')
 
     log_group.add_argument(
@@ -1049,6 +1058,11 @@ def _set_common_perser_args(parser, backup=False):
         '-v', '--verbose',
         dest='loglevel', action='store_const', const=logging.INFO,
         help='enable verbose output')
+    log_group.add_argument(
+        '-V', '--very-verbose',
+        dest='loglevel', action='store_const',
+        const=logging.getLevelName('VERBOSE'),
+        help='enable very verbose output (also prints offending lines)')
     log_group.add_argument(
         '-d', '--debug',
         dest='loglevel', action='store_const', const=logging.DEBUG,
@@ -1320,6 +1334,7 @@ def parse_args(args=None, namespace=None, parser=None):
 def main(argv=None):
     """Main CLI interface."""
 
+    logging.addLevelName(logging.INFO - 1, 'VERBOSE')
     logging.basicConfig(format=LOGFMT, level=logging.INFO, stream=sys.stdout)
     logging.captureWarnings(True)
 
