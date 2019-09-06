@@ -7,6 +7,7 @@ Release History
 * New check/fix for file permissions (source files shall not be executable).
 * New option for checking/fixing file formatting using the
   `clang-format`_ tool (if available).
+* Additional info about the offending line provided in verbose mode.
 * Improved docstrings and descriptions.
 * Update copyright statement date.
 * Fix linter warnings.

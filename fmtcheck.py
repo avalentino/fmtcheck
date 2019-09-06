@@ -31,6 +31,7 @@ import fnmatch
 import logging
 import argparse
 import datetime
+import functools
 import subprocess
 import collections
 
@@ -258,7 +259,7 @@ class SrcTree(object):
 
 
 def _isexecutable(mode):
-    return mode & (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+    return bool(mode & (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH))
 
 
 class CheckTool(object):
@@ -313,6 +314,47 @@ class CheckTool(object):
                 '{!r}'.format(key))
 
         self._checklist = collections.OrderedDict()
+        self._current_filename = None
+
+    def _tab_checker(self, data, tab_re=re.compile(b'\t')):
+        mobj = tab_re.search(data)
+        if mobj is not None:
+            lines = data[:mobj.end()].splitlines()
+            logging.info(
+                '%s:%d: %r -- tab character (first occurrence)',
+                self._current_filename, len(lines), lines[-1].decode('utf-8'))
+        return mobj is not None
+
+    def _invalid_eol_checker(self, data, invalid_eol_re=None):
+        if invalid_eol_re is None:
+            if self.eol.value == Eol.UNIX.value:
+                invalid_eol_re = re.compile(b'\r\n')
+            elif self.eol.value == Eol.WIN.value:
+                invalid_eol_re = re.compile(b'(?<!\r)\n')
+            else:
+                raise ValueError(
+                    'unexpected end of line: {!r}'.format(self.eol))
+
+        mobj = invalid_eol_re.search(data)
+        if mobj is not None:
+            lines = data[:mobj.end()].splitlines()
+            logging.info(
+                '%s:%d: %r -- invalid EOL (first occurrence)',
+                self._current_filename, len(lines), lines[-1].decode('utf-8'))
+        return mobj is not None
+
+    def _trailing_checker(self, data, trailing_spaces_re=None):
+        if trailing_spaces_re is None:
+            trailing_spaces_re = re.compile(
+                    b'[ \t]' + self.eol.value.encode('ascii'))
+
+        mobj = trailing_spaces_re.search(data)
+        if mobj is not None:
+            lines = data[:mobj.end()].splitlines()
+            logging.info(
+                '%s:%d: %r -- trailing spaces (first occurrence)',
+                self._current_filename, len(lines), lines[-1].decode('utf-8'))
+        return mobj is not None
 
     def _encoding_checker(self, data):
         for lineno, line in enumerate(data.splitlines(), 1):
@@ -329,10 +371,10 @@ class CheckTool(object):
         else:
             line_iterator = data.split(self.eol.value.encode('ascii'))
 
-        for lineno, line in enumerate(line_iterator):
+        for lineno, line in enumerate(line_iterator, 1):
             if len(line) > self.maxlinelen:
                 logging.info(
-                    'line %d is %d characters long', lineno+1, len(line))
+                    'line %d is %d characters long', lineno, len(line))
                 return True
 
     @staticmethod
@@ -342,18 +384,14 @@ class CheckTool(object):
             return True
 
     def _relative_include_checker(self, data):
-        if self.RELATIVE_INCLUDE_RE.search(data):
-            return True
+        return self.RELATIVE_INCLUDE_RE.search(data) is not None
 
     def _copyright_checker(self, data):
-        if not self.COPYRIGHT_RE.search(data):
-            return True
+        return self.COPYRIGHT_RE.search(data) is None
 
     @staticmethod
     def _mode_checker(direntry):
-        mode = direntry.stat().st_mode
-        if _isexecutable(mode):
-            return True
+        return _isexecutable(direntry.stat().st_mode)
 
     def _clang_format_checker(self, direntry, data):
         # assert(self.CXX_PATH_RE.match(direntry.name))
@@ -397,8 +435,7 @@ class CheckTool(object):
         checklist = collections.OrderedDict()
 
         if self.check_tabs:
-            tab_re = re.compile(b'\t')
-            checklist['tabs'] = tab_re.search
+            checklist['tabs'] = self._tab_checker
 
         if self.check_eol:
             if self.eol.value == Eol.UNIX.value:
@@ -409,12 +446,14 @@ class CheckTool(object):
                 raise ValueError(
                     'unexpected end of line: {!r}'.format(self.eol))
 
-            checklist['invalid EOL'] = invalid_eol_re.search
+            checklist['invalid EOL'] = functools.partial(
+                self._invalid_eol_checker, invalid_eol_re=invalid_eol_re)
 
         if self.check_trailing:
             trailing_spaces_re = re.compile(
                 b'[ \t]' + self.eol.value.encode('ascii'))
-            checklist['trailing spaces'] = trailing_spaces_re.search
+            checklist['trailing spaces'] = functools.partial(
+                self._trailing_checker, trailing_spaces_re=trailing_spaces_re)
 
         if self.check_encoding:
             key = 'not {}'.format(self.encoding)
@@ -435,35 +474,37 @@ class CheckTool(object):
         return checklist
 
     def _check_file_core(self, direntry, data):
-        filename = direntry.path
+        self._current_filename = direntry.path
+        try:
+            logging.debug('checking %r', self._current_filename)
 
-        logging.debug('checking %r', filename)
+            stats = collections.Counter()
 
-        stats = collections.Counter()
+            for key, checkfunc in self._checklist.items():
+                if checkfunc(data):
+                    stats[key] += 1
+                    logging.info('{}: {}'.format(self._current_filename, key))
+                    if self.failfast:
+                        return stats
 
-        for key, checkfunc in self._checklist.items():
-            if checkfunc(data):
+            if self.check_mode and self._mode_checker(direntry):
+                key = 'mode (executable bit)'
                 stats[key] += 1
-                logging.info('{}: {}'.format(filename, key))
+                logging.info('{}: {}'.format(self._current_filename, key))
                 if self.failfast:
                     return stats
 
-        if self.check_mode and self._mode_checker(direntry):
-            key = 'mode (executable bit)'
-            stats[key] += 1
-            logging.info('{}: {}'.format(filename, key))
-            if self.failfast:
-                return stats
+            if self.clang_format and self.CXX_PATH_RE.match(direntry.name):
+                if self._clang_format_checker(direntry, data):
+                    key = 'clang-format'
+                    stats[key] += 1
+                    logging.info('{}: {}'.format(self._current_filename, key))
+                    if self.failfast:
+                        return stats
 
-        if self.clang_format and self.CXX_PATH_RE.match(direntry.name):
-            if self._clang_format_checker(direntry, data):
-                key = 'clang-format'
-                stats[key] += 1
-                logging.info('{}: {}'.format(filename, key))
-                if self.failfast:
-                    return stats
-
-        return stats
+            return stats
+        finally:
+            self._current_filename = None
 
     def check_file(self, filename):
         """Perform checks on the specified file."""
