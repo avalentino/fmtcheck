@@ -8,6 +8,7 @@ Release History
 * New option for checking/fixing file formatting using the
   `clang-format`_ tool (if available).
 * Additional info about the offending line provided in verbose mode.
+* New "VERBOSE" logging level.
 * Improved docstrings and descriptions.
 * Update copyright statement date.
 * Fix linter warnings.
