@@ -271,7 +271,7 @@ class CheckTool(object):
     maximum line length, presence of an End Of Line (EOL) character
     before the End Of File (EOF),
     presence of a copyright statement is source files,
-    file permissions (source files shall not be executables),
+    file permissions (source files shall not be executable),
     formatting according clang-format standards.
 
     By default the tool prints how many files fail the check,
@@ -556,7 +556,7 @@ class FixTool(object):
     trailing spaces removal, substitution of tabs with spaces,
     ensuring that an End Of Line (EOL) character is always present
     before the End Of File (EOF),
-    file permissions (source files shall not be executables),
+    file permissions (source files shall not be executable),
     reformat according to clang-format standards.
 
     """
@@ -1148,7 +1148,7 @@ def get_check_parser(parser=None):
         '--clang-format', nargs='?', const=DEFAULT_CLANG_FORMAT,
         metavar='CLANG-FORMAT EXECUTABLE',
         help='''checks formatting with clang-format (default: not check). The
-        path to the "clang-format" executable can be optionally secified.
+        path to the "clang-format" executable can be optionally specified.
         Please remember to use the "--" separator before positional arguments.
         ''')
     parser.add_argument(
@@ -1183,7 +1183,7 @@ def get_fix_parser(parser=None):
     parser.add_argument(
         '--tabsize', default=4, type=int, help='''specify the number of
         blanks to be used to replace each tab (default: %(default)s).
-        To disable tab substitution set tabsize to 0''')
+        To disable tab substitution set tab size to 0''')
     parser.add_argument(
         '--no-trailing', action='store_false', dest='fix_trailing',
         default=True, help='''do not fix trailing spaces
@@ -1200,7 +1200,7 @@ def get_fix_parser(parser=None):
         '--clang-format', nargs='?', const=DEFAULT_CLANG_FORMAT,
         metavar='CLANG-FORMAT EXECUTABLE',
         help='''fix formatting using clang-format (default: disabled). The
-        path to the "clang-format" executable can be optionally secified.
+        path to the "clang-format" executable can be optionally specified.
         Please remember to use the "--" separator before positional arguments.
         ''')
 
