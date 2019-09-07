@@ -19,15 +19,14 @@ The tool provides the following sub-commands:
     file and avoid to pass options via command line.
 
 Please note that using a configuration file is the only way to specify some
-advanced options related to the the specification of file patterns to scan
-or to skip.
+advanced options related e.g. to file patterns to scan or to skip.
 
 The `fmtchek` tool can be used interactively form the command line,
 or it can be integrated in CI systems to perform basic check/fixes of the
 source tree at each commit.
 
 It is possible to specify one or more files and directories to scan,
-so checking an entire entire source tree vary easy.
+so checking an entire source tree is very easy.
 
 
 Usage
@@ -79,8 +78,8 @@ source code:
 * conformity to the ASCII encoding,
 * code lines not longer than the maximum specified value,
 * the presence of an End Of Line (EOL) character before the End Of File (EOF),
-* the presence of a copyright statement is source files,
-* the file permissions (source files shall not be executables), and
+* the presence of a copyright statement in source files,
+* the file permissions (source files shall not be executable), and
 * the formatting is in line with the clang-format standards.
 
 The `check` sub-command has the following options::
@@ -91,8 +90,9 @@ The `check` sub-command has the following options::
                           [--no-encoding] [--no-eof] [--no-relative-include]
                           [--no-copyright] [--no-mode]
                           [--clang-format [CLANG-FORMAT EXECUTABLE]]
-                          [-l MAXLINELEN] [-f] [-q] [-v] [-d]
-                          [--patterns PATH_PATTERNS]
+                          [-l MAXLINELEN] [-f]
+                          [--loglevel {DEBUG,VERBOSE,INFO,WARNING,ERROR,CRITICAL}]
+                          [-q] [-v] [-V] [-d] [--patterns PATH_PATTERNS]
                           [--skip SKIP_PATH_PATTERNS] [--no-skip] [-c CONFIG]
                           PATH [PATH ...]
 
@@ -101,13 +101,13 @@ The `check` sub-command has the following options::
     the end of a source code line, presence of tabs, conformity to the ASCII
     encoding, maximum line length, presence of an End Of Line (EOL) character
     before the End Of File (EOF), presence of a copyright statement is source
-    files, file permissions (source files shall not be executables),
+    files, file permissions (source files shall not be executable),
     formatting according clang-format standards.
     By default the tool prints how many files fail the check, for each of
     the selected checks.
 
     positional arguments:
-      PATH                  root of the source tree to scan (default: None)
+      PATH                  root of the source tree to scan
 
     optional arguments:
       -h, --help            show this help message and exit
@@ -133,7 +133,7 @@ The `check` sub-command has the following options::
                             checks formatting with clang-format
                             (default: not check).
                             The path to the "clang-format" executable can
-                            be optionally secified. Please remember to use
+                            be optionally specified. Please remember to use
                             the "--" separator before positional arguments.
       -l MAXLINELEN, --line-length MAXLINELEN
                             set the maximum line length, if not set (default)
@@ -141,10 +141,14 @@ The `check` sub-command has the following options::
       -f, --failfast        exit immediately as soon as a check fails
 
     logging:
-      -q, --quiet           suppress standard output, only errors are printed
-                            to screen
-      -v, --verbose         enable verbose output
-      -d, --debug           enable debug output
+      --loglevel {DEBUG,VERBOSE,INFO,WARNING,ERROR,CRITICAL}
+                            logging level (default: INFO)
+      -q, --quiet           suppress standard output messages,
+                            only errors are printed to screen
+      -v, --verbose         print verbose output messages
+      -V, --very-verbose    print more verbose output messages (also prints
+                            offending lines)
+      -d, --debug           print debug messages
 
     source tree scanning:
       --patterns PATH_PATTERNS
@@ -187,7 +191,7 @@ source code:
 * substitution of tabs with spaces,
 * ensuring that an End Of Line (EOL) character is always present before
   the End Of File (EOF),
-* file permissions (source files shall not be executables), and
+* file permissions (source files shall not be executable), and
 * reformat according to clang-format standards.
 
 The `fix` sub-command has the following options::
@@ -196,10 +200,10 @@ The `fix` sub-command has the following options::
     
     usage: fmtcheck fix [-h] [--eol {NATIVE,UNIX,WIN}] [--tabsize TABSIZE]
                         [--no-trailing] [--no-eof] [--no-mode]
-                        [--clang-format [CLANG-FORMAT EXECUTABLE]]
-                        [-b] [-q] [-v] [-d]
-                        [--patterns PATH_PATTERNS] [--skip SKIP_PATH_PATTERNS]
-                        [--no-skip] [-c CONFIG]
+                        [--clang-format [CLANG-FORMAT EXECUTABLE]] [-b]
+                        [--loglevel {DEBUG,VERBOSE,INFO,WARNING,ERROR,CRITICAL}]
+                        [-q] [-v] [-V] [-d] [--patterns PATH_PATTERNS]
+                        [--skip SKIP_PATH_PATTERNS] [--no-skip] [-c CONFIG]
                         PATH [PATH ...]
 
     Fix basic formatting issues. Available fixes include: end of line (EOL)
@@ -209,7 +213,7 @@ The `fix` sub-command has the following options::
     executables), reformat according to clang-format standards.
 
     positional arguments:
-      PATH                  root of the source tree to scan (default: None)
+      PATH                  root of the source tree to scan
 
     optional arguments:
       -h, --help            show this help message and exit
@@ -217,7 +221,7 @@ The `fix` sub-command has the following options::
                             output end of line (default: native)
       --tabsize TABSIZE     specify the number of blanks to be used to replace
                             each tab (default: 4). To disable tab substitution
-                            set tabsize to 0
+                            set tab size to 0
       --no-trailing         do not fix trailing spaces i.e. white spaces at the
                             end of line (default: False)
       --no-eof              do not fix missing EOL characters at the end of the
@@ -228,7 +232,7 @@ The `fix` sub-command has the following options::
                             fix formatting using clang-format
                             (default: disabled).
                             The path to the "clang-format" executable can be
-                            optionally secified. Please remember to use
+                            optionally specified. Please remember to use
                             the "--" separator before positional arguments.
 
     backup:
@@ -236,10 +240,14 @@ The `fix` sub-command has the following options::
                             same name + ".bak". Default no backup is performed.
 
     logging:
-      -q, --quiet           suppress standard output, only errors are printed
-                            to screen
-      -v, --verbose         enable verbose output
-      -d, --debug           enable debug output
+      --loglevel {DEBUG,VERBOSE,INFO,WARNING,ERROR,CRITICAL}
+                            logging level (default: INFO)
+      -q, --quiet           suppress standard output messages,
+                            only errors are printed to screen
+      -v, --verbose         print verbose output messages
+      -V, --very-verbose    print more verbose output messages (also prints
+                            offending lines)
+      -d, --debug           print debug messages
 
     source tree scanning:
       --patterns PATH_PATTERNS
@@ -265,7 +273,9 @@ The `update-copyright` sub-command has the following options::
     $ fmtcheck update-copyright -h
 
     usage: fmtcheck update-copyright [-h] [-t COPYRIGHT_TEMPLATE_PATH]
-                                     [--no-update] [-y YEAR] [-b] [-q] [-v] [-d]
+                                     [--no-update] [-y YEAR] [-b]
+                                     [--loglevel {DEBUG,VERBOSE,INFO,WARNING,ERROR,CRITICAL}]
+                                     [-q] [-v] [-V] [-d]
                                      [--patterns PATH_PATTERNS]
                                      [--skip SKIP_PATH_PATTERNS] [--no-skip]
                                      [-c CONFIG]
@@ -278,7 +288,7 @@ The `update-copyright` sub-command has the following options::
     added by providing a suiteble template.
 
     positional arguments:
-      PATH                  root of the source tree to scan (default: None)
+      PATH                  root of the source tree to scan
 
     optional arguments:
       -h, --help            show this help message and exit
@@ -300,17 +310,21 @@ The `update-copyright` sub-command has the following options::
       --no-update           disable the update of the date in existing
                             copyright lines (default: False)
       -y YEAR, --year YEAR  specify the last year covered by the copyright
-                            (default: 2018)
+                            (default: 2019)
 
     backup:
       -b, --backup          backup original file contents on a file with the
                             same name + ".bak". Default no backup is performed.
 
     logging:
-      -q, --quiet           suppress standard output, only errors are printed
-                            to screen
-      -v, --verbose         enable verbose output
-      -d, --debug           enable debug output
+      --loglevel {DEBUG,VERBOSE,INFO,WARNING,ERROR,CRITICAL}
+                            logging level (default: INFO)
+      -q, --quiet           suppress standard output messages, only errors are
+                            printed to screen
+      -v, --verbose         print verbose output messages
+      -V, --very-verbose    print more verbose output messages (also prints
+                            offending lines)
+      -d, --debug           print debug messages
 
     source tree scanning:
       --patterns PATH_PATTERNS
@@ -326,6 +340,14 @@ The `update-copyright` sub-command has the following options::
     config:
       -c CONFIG, --config CONFIG
                             path to the configuration file
+
+
+Copyright template example::
+
+    /*
+     * Copyright (C) {year} Author Name <author.name@domain.org>
+     * All right reserved.
+     */
 
 
 `dumpcfg` sub-command
