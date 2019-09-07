@@ -19,6 +19,8 @@ mistakes, and also to set and update the copyright statement
 # * the "argcomplete" package is strongly recommended for all Python versions
 #   (https://pypi.org/project/argcomplete)
 
+# PYTHON_ARGCOMPLETE_OK
+
 import io
 import os
 import re
@@ -46,7 +48,8 @@ try:
     from os import EX_OK
 except ImportError:
     EX_OK = 0
-EX_FAILURE = -1
+EX_FAILURE = 1
+EX_INTERRUPT = 130
 
 if not hasattr(os, 'scandir'):
     from scandir import _scandir
@@ -57,8 +60,6 @@ try:
     import argcomplete
 except ImportError:
     argcomplete = False
-else:
-    PYTHON_ARGCOMPLETE_OK = True
 
 
 __version__ = '1.4.0b1'
@@ -1035,6 +1036,36 @@ def _summary_line(s):
     return s.split('\n\n', 1)[0]
 
 
+def _set_logging_control_args(parser, default_loglevel='INFO'):
+    """Setup command line options for logging control."""
+
+    assert isinstance(logging.getLevelName('VERBOSE'), int)
+
+    loglevels = ['DEBUG', 'VERBOSE', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
+
+    parser.add_argument(
+        '--loglevel', default=default_loglevel, choices=loglevels,
+        help='logging level (default: %(default)s)')
+    parser.add_argument(
+        '-q', '--quiet', dest='loglevel', action='store_const',
+        const='ERROR',
+        help='suppress standard output messages, '
+             'only errors are printed to screen')
+    parser.add_argument(
+        '-v', '--verbose', dest='loglevel', action='store_const',
+        const='INFO', help='print verbose output messages')
+    parser.add_argument(
+        '-V', '--very-verbose', dest='loglevel', action='store_const',
+        const='VERBOSE',
+        help='print more verbose output messages '
+             '(also prints offending lines)')
+    parser.add_argument(
+        '-d', '--debug', dest='loglevel', action='store_const',
+        const='DEBUG', help='print debug messages')
+
+    return parser
+
+
 def _set_common_perser_args(parser, backup=False):
     # --- backup -------------------------------------------------------------
     if backup:
@@ -1047,26 +1078,8 @@ def _set_common_perser_args(parser, backup=False):
             Default no backup is performed.''')
 
     # --- logging ------------------------------------------------------------
-    assert isinstance(logging.getLevelName('VERBOSE'), int)
     log_group = parser.add_argument_group('logging')
-
-    log_group.add_argument(
-        '-q', '--quiet',
-        dest='loglevel', action='store_const', const=logging.ERROR,
-        help='suppress standard output, only errors are printed to screen')
-    log_group.add_argument(
-        '-v', '--verbose',
-        dest='loglevel', action='store_const', const=logging.INFO,
-        help='enable verbose output')
-    log_group.add_argument(
-        '-V', '--very-verbose',
-        dest='loglevel', action='store_const',
-        const=logging.getLevelName('VERBOSE'),
-        help='enable very verbose output (also prints offending lines)')
-    log_group.add_argument(
-        '-d', '--debug',
-        dest='loglevel', action='store_const', const=logging.DEBUG,
-        help='enable debug output')
+    _set_logging_control_args(log_group)
 
     # --- scanning -----------------------------------------------------------
     scan_group = parser.add_argument_group('source tree scanning')
@@ -1092,7 +1105,7 @@ def _set_common_perser_args(parser, backup=False):
     # --- path ---------------------------------------------------------------
     parser.add_argument(
         'paths', nargs='+', metavar='PATH',
-        help='root of the source tree to scan (default: %(default)r)')
+        help='root of the source tree to scan')
 
     return parser
 
@@ -1287,6 +1300,7 @@ def get_parser():
     parser.add_argument(
         '--version', action='version', version='%(prog)s v' + __version__)
 
+    # Sub-command management
     subparsers = parser.add_subparsers(dest='command', title='sub-commands')
 
     get_check_parser(subparsers)
@@ -1331,18 +1345,22 @@ def parse_args(args=None, namespace=None, parser=None):
     return args
 
 
-def main(argv=None):
+def main(*argv):
     """Main CLI interface."""
 
+    # setup logging
     logging.addLevelName(logging.INFO - 1, 'VERBOSE')
     logging.basicConfig(format=LOGFMT, level=logging.INFO, stream=sys.stdout)
     logging.captureWarnings(True)
 
-    args = parse_args(argv)
-    logging.getLogger().setLevel(args.loglevel)
-    ret = EX_OK
+    # parse cmd line arguments
+    args = parse_args(argv if argv else None)
 
+    # execute main tasks
+    ret = EX_OK
     try:
+        logging.getLogger().setLevel(args.loglevel)
+
         scancfg = DEFAULT_CFG
 
         if getattr(args, 'config', None) is not None:
@@ -1468,6 +1486,9 @@ def main(argv=None):
                 type(exc).__name__, exc))
         logging.debug('stacktrace:', exc_info=True)
         ret = EX_FAILURE
+    except KeyboardInterrupt:
+        logging.warning('Keyboard interrupt received: exit the program')
+        ret = EX_INTERRUPT
 
     return ret
 
