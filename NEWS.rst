@@ -1,8 +1,8 @@
 Release History
 ===============
 
-1.4.0 (in development)
-----------------------
+1.4.0 (07/09/2019)
+------------------
 
 * New check/fix for file permissions (source files shall not be executable).
 * New option for checking/fixing file formatting using the

@@ -62,7 +62,7 @@ except ImportError:
     argcomplete = False
 
 
-__version__ = '1.4.0b1'
+__version__ = '1.4.0'
 PROG = 'fmtcheck'
 LOGFMT = '%(levelname)s: %(message)s'
 DEFAULT_CLANG_FORMAT = 'clang-format'
