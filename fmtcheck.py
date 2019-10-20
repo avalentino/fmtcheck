@@ -705,7 +705,7 @@ class CopyrightTool(object):
 
     CHECK_COPYRIGHT_RE = CheckTool.COPYRIGHT_RE.pattern.decode('utf-8')
     COPYRIGHT_RE_TEMPLATE = (
-        r'(?P<copyright>:?[Cc]opyright:?([ \t]+(\([Cc]\)))?)'
+        r'(?P<copyright>:?[Cc]opyright([ \t]+(\([Cc]\)))?:?)'
         r'[ \t]+(?!%(year)d)'
         r'(?P<firstyear>\d{4})'
         r'((-|(,\d{4})*,)(?P<lastyear>\d{4})?)?'
