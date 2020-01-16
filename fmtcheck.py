@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# PYTHON_ARGCOMPLETE_OK
 
 """Ensure the source code conformity to basic formatting standards.
 
@@ -18,8 +19,6 @@ mistakes, and also to set and update the copyright statement
 #   (https://pypi.org/project/enum34)
 # * the "argcomplete" package is strongly recommended for all Python versions
 #   (https://pypi.org/project/argcomplete)
-
-# PYTHON_ARGCOMPLETE_OK
 
 import io
 import os
